@@ -42,14 +42,14 @@ if exist(this_originalpe_matname, 'file') ~= 2
         info = parse_WUSTL_cutoutname( dbname );
         transformation_txtname = fullfile(params.data.dir, params.data.db.trans.dir, this_floorid, 'transformations', ...
                     sprintf('%s_trans_%s.txt', info.scene_id, info.scan_id));
-        [ ~, P_after ] = load_WUSTL_transformation(transformation_txtname);
+        P = load_CIIRC_transformation(transformation_txtname);
 
         %DB 3d points
         tent_xdb3d = zeros(3, size(tent_xdb2d, 2));
         tent_xdb3d(1, :) = interp2(XYZcut(:, :, 1), tent_xdb2d(1, :), tent_xdb2d(2, :));
         tent_xdb3d(2, :) = interp2(XYZcut(:, :, 2), tent_xdb2d(1, :), tent_xdb2d(2, :));
         tent_xdb3d(3, :) = interp2(XYZcut(:, :, 3), tent_xdb2d(1, :), tent_xdb2d(2, :));
-        tent_xdb3d = bsxfun(@plus, P_after(1:3, 1:3)*tent_xdb3d, P_after(1:3, 4));
+        tent_xdb3d = bsxfun(@plus, P(1:3, 1:3)*tent_xdb3d, P(1:3, 4));
 
         %Select keypoint correspond to 3D
         idx_3d = all(~isnan(tent_xdb3d), 1);

@@ -48,10 +48,10 @@ if exist(densePV_matname, 'file') ~= 2
         this_Plist = Plist_uniq{ii};
         %load scan
         load(fullfile(params.data.dir, params.data.db.scan.dir, this_dbscan), 'A');
-        [ ~, P_after ] = load_WUSTL_transformation(fullfile(params.data.dir, params.data.db.trans.dir, this_dbscantrans));
+        P = load_CIIRC_transformation(fullfile(params.data.dir, params.data.db.trans.dir, this_dbscantrans));
         RGB = [A{5}, A{6}, A{7}]';
         XYZ = [A{1}, A{2}, A{3}]';
-        XYZ = P_after * [XYZ; ones(1, length(XYZ))];
+        XYZ = P * [XYZ; ones(1, length(XYZ))];
         XYZ = bsxfun(@rdivide, XYZ(1:3, :), XYZ(4, :));
         
         %compute synthesized images and similarity scores
