@@ -6,6 +6,7 @@ P = zeros(4, 4);
 
 fid =  fopen(transformation_path, 'r');
 data_all = textscan(fid, '%s', 'Delimiter', '\n');
+data_all = data_all{1};
 fclose(fid);
 
 P(1, :) = str2double(strsplit(data_all{1}));

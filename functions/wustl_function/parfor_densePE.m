@@ -23,7 +23,7 @@ if exist(this_densepe_matname, 'file') ~= 2
     this_floorid = strsplit(dbname, '/');this_floorid = this_floorid{1};
     info = parse_WUSTL_cutoutname( dbname );
     transformation_txtname = fullfile(params.data.dir, params.data.db.trans.dir, this_floorid, 'transformations', ...
-                sprintf('%s_trans_%s.txt', info.scene_id, info.scan_id));
+                sprintf('trans_%s.txt', info.scan_id));
     P = load_CIIRC_transformation(transformation_txtname);
     %Feature upsampling
     Iqsize = size(imread(fullfile(params.data.dir, params.data.q.dir, qname)));

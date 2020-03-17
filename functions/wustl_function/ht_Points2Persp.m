@@ -21,6 +21,13 @@ XYZ = XYZ(:, front_idx);
 UV_norm = UV_norm(front_idx);
 
 visible_idx = UV(1, :) >= 0 & UV(2, :) >= 0 & UV(1, :) < W & UV(2, :) < H;
+
+% TODO: investigate; needing this is suspicious
+if sum(sum(visible_idx)) == 0
+    RGBpersp = uint8(RGBpersp);
+    return
+end
+
 UV = UV(:, visible_idx);
 RGB = RGB(:, visible_idx);
 XYZ = XYZ(:, visible_idx);

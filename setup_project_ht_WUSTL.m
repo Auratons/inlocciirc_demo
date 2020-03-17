@@ -5,21 +5,29 @@ function [ params ] = setup_project_ht_WUSTL
 params = struct();
 
 %WUSTL dataset
-params.data.dir = '/home/lucivpav/InLocCIIRC_dataset';
-params.data.netvlad.dir = '/home/lucivpav/NetVLAD';
+env = environment();
+if strcmp(env, 'ciirc')
+    params.data.dir = '/home/lucivpav/InLocCIIRC_dataset';
+    params.data.netvlad.dir = '/home/lucivpav/NetVLAD';
+elseif strcmp(env, 'cmp')
+    params.data.dir = '/datagrid/personal/lucivpav/InLocCIIRC_dataset';
+    params.data.netvlad.dir = '/datagrid/personal/lucivpav/NetVLAD';
+elseif strcmp(env, 'laptop')
+    params.data.dir = '/Volumes/GoogleDrive/Můj disk/ARTwin/InLocCIIRC_dataset';
+    params.data.netvlad.dir = '/Volumes/GoogleDrive/Můj disk/ARTwin/InLocCIIRC_dataset/NetVLAD';
+end
 params.data.netvlad.pretrained = fullfile(params.data.netvlad.dir, 'vd16_pitts30k_conv5_3_vlad_preL2_intra_white.mat');
 %database
-params.data.db.dir = 'database';
 params.data.db.space_names = {'B-670', 'B-315'};
 %%scan
-params.data.db.scan.dir = 'scans'
+params.data.db.scan.dir = 'scans';
 params.data.db.scan.matformat = '.ptx.mat';
 %%cutouts
-params.data.db.cutout.dir = fullfile(params.data.db.dir, 'cutouts');
+params.data.db.cutout.dir = 'cutouts';
 params.data.db.cutout.imgformat = '.jpg';
 params.data.db.cutout.matformat = '.mat';
 %%alignments
-params.data.db.trans.dir = fullfile(params.data.db.dir, 'alignments');
+params.data.db.trans.dir = 'alignments';
 %query
 params.data.q.dir = 'query';
 params.data.q.imgformat = '.jpg';
@@ -27,7 +35,7 @@ params.data.q.fl = 3172; % [px]
 
 
 %input
-params.input.dir = 'inputs';
+params.input.dir = fullfile(params.data.dir, 'inputs');
 params.input.dblist_matname = fullfile(params.input.dir, 'cutout_imgnames_all.mat');%string cell containing cutout image names
 params.input.qlist_matname = fullfile(params.input.dir, 'query_imgnames_all.mat');%string cell containing query image names
 params.input.score_matname = fullfile(params.input.dir, 'scores.mat');%retrieval score matrix
@@ -39,7 +47,7 @@ params.input.feature.q_sps_matformat = '.features.sparse.mat';
 
 
 %output
-params.output.dir = 'outputs';
+params.output.dir = fullfile(params.data.dir, 'outputs');
 params.output.gv_dense.dir = fullfile(params.output.dir, 'gv_dense');%dense matching results (directory)
 params.output.gv_dense.matformat = '.gv_dense.mat';%dense matching results (file extention)
 params.output.gv_sparse.dir = fullfile(params.output.dir, 'gv_sparse');%sparse matching results (directory)

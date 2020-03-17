@@ -15,7 +15,7 @@ R_p2c = R_rpy(0, info.phi, info.theta);
 t_p2c = [0; 0; 0];
 
 %[R, t] for conversion of scan coordinate to floor coordinate
-dbscan_trans_txtname = fullfile(params.data.dir, params.data.db.trans.dir, floorname, 'transformations', [info.scene_id, '_trans_', info.scan_id, '.txt']);
+dbscan_trans_txtname = fullfile(params.data.dir, params.data.db.trans.dir, floorname, 'transformations', ['trans_', info.scan_id, '.txt']);
 P = load_CIIRC_transformation(dbscan_trans_txtname);
 R_s2f = P(1:3, 1:3);
 t_s2f = P(1:3, 4);

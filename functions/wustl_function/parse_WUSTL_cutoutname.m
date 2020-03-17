@@ -4,10 +4,8 @@ info = struct();
 [~, cutout_basename, ~] = fileparts(cutout_name);
 cutout_split = strsplit(cutout_basename, '_');
 
-info.scene_id = cutout_split{1};
-info.scan_id = cutout_split{3};
-info.theta = str2double(cutout_split{4});
-info.phi = str2double(cutout_split{5});
+info.scan_id = cutout_split{2};
+info.theta = str2double(cutout_split{3});
+info.phi = str2double(cutout_split{4});
 
 end
-

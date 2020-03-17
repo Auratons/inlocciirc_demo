@@ -25,7 +25,7 @@ if exist(densePV_matname, 'file') ~= 2
         this_floorid = strsplit(dblist{ii}, '/');this_floorid = this_floorid{1};
         info = parse_WUSTL_cutoutname( dblist{ii} );
         dbscanlist{ii} = strcat(this_floorid, params.data.db.scan.matformat);
-        dbscantranslist{ii} = fullfile(this_floorid, 'transformations', [info.scene_id, '_trans_', info.scan_id, '.txt']);
+        dbscantranslist{ii} = fullfile(this_floorid, 'transformations', ['trans_', info.scan_id, '.txt']);
     end
     [dbscanlist_uniq, sort_idx, uniq_idx] = unique(dbscanlist);
     dbscantranslist_uniq = dbscantranslist(sort_idx);
