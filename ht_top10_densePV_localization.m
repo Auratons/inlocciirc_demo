@@ -28,12 +28,13 @@ if exist(densePV_matname, 'file') ~= 2
         dbscantranslist{ii} = fullfile(this_floorid, 'transformations', ['trans_', info.scan_id, '.txt']);
     end
     [dbscanlist_uniq, sort_idx, uniq_idx] = unique(dbscanlist);
-    dbscantranslist_uniq = dbscantranslist(sort_idx);
+    dbscantranslist_uniq = cell(size(dbscanlist_uniq));
     qlist_uniq = cell(size(dbscanlist_uniq));
     dblist_uniq = cell(size(dbscanlist_uniq));
     Plist_uniq = cell(size(dbscanlist_uniq));
     for ii = 1:1:length(dbscanlist_uniq)
         idx = uniq_idx == ii;
+        dbscantranslist_uniq{ii} = dbscantranslist(idx);
         qlist_uniq{ii} = qlist(idx);
         dblist_uniq{ii} = dblist(idx);
         Plist_uniq{ii} = Plist(idx);
@@ -46,16 +47,17 @@ if exist(densePV_matname, 'file') ~= 2
         this_qlist = qlist_uniq{ii};
         this_dblist = dblist_uniq{ii};
         this_Plist = Plist_uniq{ii};
-        %load scan
+        
         load(fullfile(params.data.dir, params.data.db.scan.dir, this_dbscan), 'A');
-        P = load_CIIRC_transformation(fullfile(params.data.dir, params.data.db.trans.dir, this_dbscantrans));
-        RGB = [A{5}, A{6}, A{7}]';
-        XYZ = [A{1}, A{2}, A{3}]';
-        XYZ = P * [XYZ; ones(1, length(XYZ))];
-        XYZ = bsxfun(@rdivide, XYZ(1:3, :), XYZ(4, :));
         
         %compute synthesized images and similarity scores
         parfor jj = 1:1:length(this_qlist)
+            P = load_CIIRC_transformation(fullfile(params.data.dir, params.data.db.trans.dir, this_dbscantrans{jj}));
+            RGB = [A{5}, A{6}, A{7}]';
+            XYZ = [A{1}, A{2}, A{3}]';
+            XYZ = P * [XYZ; ones(1, length(XYZ))];
+            XYZ = bsxfun(@rdivide, XYZ(1:3, :), XYZ(4, :));
+            
             parfor_densePV( this_qlist{jj}, this_dblist{jj}, this_Plist{jj}, RGB, XYZ, params );
             fprintf('densePV: %d / %d done. \n', jj, length(this_qlist));
         end
