@@ -64,5 +64,10 @@ params.output.pnp_sparse_origin.matformat = '.pnp_sparse_origin.mat';%PnP result
 params.output.synth.dir = fullfile(params.output.dir, 'synthesized');%View synthesis results (directory)
 params.output.synth.matformat = '.synth.mat';%View synthesis results (file extention)
 
+% evaluation
+params.evaluation.dir = fullfile(params.data.dir, 'evaluation');
+params.evaluation.query_vs_synth.dir = fullfile(params.evaluation.dir, 'queryVsSynth');
+params.evaluation.errors.path = fullfile(params.evaluation.dir, 'errors.csv');
+params.evaluation.summary.path = fullfile(params.evaluation.dir, 'summary.txt');
 
 end
