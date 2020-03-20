@@ -90,9 +90,9 @@ errorsTable = struct2table(errors);
 errors = table2struct(sortrows(errorsTable, 'queryId'));
 
 errorsFile = fopen(params.evaluation.errors.path, 'w');
-fprintf(errorsFile, 'id translation orientation\n');
+fprintf(errorsFile, 'id,translation,orientation\n');
 for i=1:nQueries
-    fprintf(errorsFile, '%d %g %g\n', errors(i).queryId, errors(i).translation, errors(i).orientation);
+    fprintf(errorsFile, '%d,%0.2f,%0.2f\n', errors(i).queryId, errors(i).translation, errors(i).orientation);
 end
 fclose(errorsFile);
 
