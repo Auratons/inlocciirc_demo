@@ -58,18 +58,23 @@ for i=1:nQueries
     T1 = P1(1:3,4);
     
     P2 = ImgListRecord.P{1};
-    R2 = P2(1:3,1:3); % in fact this is K*R - are you sure? viz demo
-    T2 = P2(1:3,4);
-    
-    dslevel = 8^-1;
-    Iq = queryImage;
-    fl = 3172 * dslevel;
-    K = [fl, 0, size(Iq, 2)/2.0; 0, fl, size(Iq, 1)/2.0; 0, 0, 1];
-    
-    P = P2*P1;
-    T = -inv(P(:,1:3))*P(:,4);
-    initialDirection = [0.0; 0.0; 1.0]; % TODO: verify
-    orientation = R2 * (R1 * initialDirection);
+    if any(isnan(P2(:)))
+        T = nan(3,1);
+        orientation = nan(3,1);
+    else
+        R2 = P2(1:3,1:3); % in fact this is K*R - are you sure? viz demo
+        T2 = P2(1:3,4);
+
+        dslevel = 8^-1;
+        Iq = queryImage;
+        fl = 3172 * dslevel;
+        K = [fl, 0, size(Iq, 2)/2.0; 0, fl, size(Iq, 1)/2.0; 0, 0, 1];
+
+        P = P2*P1;
+        T = -inv(P(:,1:3))*P(:,4);
+        initialDirection = [0.0; 0.0; 1.0]; % TODO: verify
+        orientation = R2 * (R1 * initialDirection);
+    end
     
     posesPath = fullfile(params.data.dir, params.data.q.dir, 'poses.csv');
     posesTable = readtable(posesPath);
