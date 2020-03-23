@@ -78,11 +78,17 @@ for i=1:nQueries
     queryId = uint32(str2num(queryId));
     posesRow = posesTable(posesTable.id==queryId, :);
     
+    referenceSpace = posesRow.space{1,1};
+
     referenceT = [posesRow.x; posesRow.y; posesRow.z];
     referenceOrientation = [posesRow.dirx; posesRow.diry; posesRow.dirz];
     
     errors(i).queryId = queryId;
-    errors(i).translation = norm(T - referenceT);
+    if strcmp(spaceName, referenceSpace)
+        errors(i).translation = norm(T - referenceT);
+    else
+        errors(i).translation = 666;
+    end
     errors(i).orientation = atan2d(norm(cross(orientation,referenceOrientation)),dot(orientation,referenceOrientation));
 end
 
