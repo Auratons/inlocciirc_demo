@@ -32,6 +32,8 @@ params.data.db.trans.dir = 'alignments';
 params.data.q.dir = 'query';
 params.data.q.imgformat = '.jpg';
 params.data.q.fl = 3172; % [px]
+% models
+params.data.models.dir = fullfile(params.data.dir, 'models');
 
 
 %input
@@ -44,6 +46,7 @@ params.input.feature.db_matformat = '.features.dense.mat';
 params.input.feature.q_matformat = '.features.dense.mat';
 params.input.feature.db_sps_matformat = '.features.sparse.mat';
 params.input.feature.q_sps_matformat = '.features.sparse.mat';
+params.input.projectMesh_py_path = fullfile(cd, 'functions/InLocCIIRC_utils/projectMesh/projectMesh.py');
 
 
 %output

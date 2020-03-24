@@ -1,4 +1,4 @@
-function parfor_densePV( qname, dbname, P, RGB, XYZ, params )
+function parfor_densePV( qname, dbname, P, params )
 dslevel = 8^-1;
 
 [~, dbbasename, ~] = fileparts(dbname);
@@ -10,8 +10,16 @@ if exist(this_densePV_matname, 'file') ~= 2
         %load downsampled images
         Iq = imresize(imread(fullfile(params.data.dir, params.data.q.dir, qname)), dslevel);
         fl = params.data.q.fl * dslevel;
-        K = [fl, 0, size(Iq, 2)/2.0; 0, fl, size(Iq, 1)/2.0; 0, 0, 1];
-        [ RGBpersp, XYZpersp ] = ht_Points2Persp( RGB, XYZ, K*P, size(Iq, 1), size(Iq, 2) );
+        R = P(1:3,1:3);
+        t = P(1:3,4);
+        spaceName = strsplit(dbname, '/');
+        spaceName = spaceName{1};
+        meshPath = fullfile(params.data.models.dir, spaceName, 'mesh_rotated.obj');
+        t = -inv(P(:,1:3))*P(:,4);
+        rFix = [180.0, 0.0, 0.0];
+        Rfix = rotationMatrix(deg2rad(rFix), 'XYZ');
+        sensorSize = [size(Iq,2), size(Iq,1)];
+        [RGBpersp, XYZpersp, depth] = projectMesh(meshPath, fl, R*Rfix, t, sensorSize, params.input.projectMesh_py_path);
         RGB_flag = all(~isnan(XYZpersp), 3);
         
         %compute DSIFT error

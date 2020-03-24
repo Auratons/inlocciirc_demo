@@ -65,11 +65,6 @@ for i=1:nQueries
         R2 = P2(1:3,1:3); % in fact this is K*R - are you sure? viz demo
         T2 = P2(1:3,4);
 
-        dslevel = 8^-1;
-        Iq = queryImage;
-        fl = 3172 * dslevel;
-        K = [fl, 0, size(Iq, 2)/2.0; 0, fl, size(Iq, 1)/2.0; 0, 0, 1];
-
         P = P2*P1;
         T = -inv(P(:,1:3))*P(:,4);
         initialDirection = [0.0; 0.0; 1.0]; % TODO: verify

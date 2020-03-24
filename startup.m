@@ -6,6 +6,8 @@ addpath('functions/relja_matlab');
 addpath('functions/relja_matlab/matconvnet/');
 addpath('functions/netvlad/');
 addpath('functions/inpaint_nans');
+addpath('functions/InLocCIIRC_utils/projectMesh');
+addpath('functions/InLocCIIRC_utils/rotationMatrix');
 
 env = environment();
 if strcmp(env, 'ciirc')

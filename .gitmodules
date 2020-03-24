@@ -13,3 +13,6 @@
 [submodule "functions/inpaint_nans"]
 	path = functions/inpaint_nans
 	url = git@github.com:briochemc/Inpaint_Nans.git
+[submodule "functions/InLocCIIRC_utils"]
+	path = functions/InLocCIIRC_utils
+	url = git@github.com:lucivpav/InLocCIIRC_utils.git
