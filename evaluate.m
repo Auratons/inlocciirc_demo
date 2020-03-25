@@ -1,9 +1,12 @@
 %% initialization
-[ params ] = setup_project_ht_WUSTL;
-
 load(params.input.qlist_matname, 'query_imgnames_all');
 densePV_matname = fullfile(params.output.dir, 'densePV_top10_shortlist.mat');
 load(densePV_matname, 'ImgList');
+
+if exist(params.evaluation.dir, 'dir') == 7
+    rmdir(params.evaluation.dir, 's')
+end
+mkdir(params.evaluation.dir)
 
 %% visual evaluation
 if exist(params.evaluation.query_vs_synth.dir, 'dir') ~= 7
@@ -32,8 +35,10 @@ for i=1:size(query_imgnames_all,2)
     else
         synthImage = imresize(synthImage, [numRows numCols]);
     end
-    
-    imshowpair(queryImage, synthImage, 'montage');
+
+    if strcmp(env, 'laptop')
+        imshowpair(queryImage, synthImage, 'montage');
+    end
     saveas(gcf, fullfile(params.evaluation.query_vs_synth.dir, queryName));
 end
 
