@@ -48,8 +48,6 @@ if exist(densePV_matname, 'file') ~= 2
         this_dblist = dblist_uniq{ii};
         this_Plist = Plist_uniq{ii};
         
-        load(fullfile(params.data.dir, params.data.db.scan.dir, this_dbscan), 'A');
-        
         %compute synthesized images and similarity scores
         parfor jj = 1:1:length(this_qlist)
             P = load_CIIRC_transformation(fullfile(params.data.dir, params.data.db.trans.dir, this_dbscantrans{jj}));

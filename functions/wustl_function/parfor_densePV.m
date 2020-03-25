@@ -15,11 +15,12 @@ if exist(this_densePV_matname, 'file') ~= 2
         spaceName = strsplit(dbname, '/');
         spaceName = spaceName{1};
         meshPath = fullfile(params.data.models.dir, spaceName, 'mesh_rotated.obj');
-        t = -inv(P(:,1:3))*P(:,4);
+        t = -inv(R)*t;
         rFix = [180.0, 0.0, 0.0];
         Rfix = rotationMatrix(deg2rad(rFix), 'XYZ');
         sensorSize = [size(Iq,2), size(Iq,1)];
-        [RGBpersp, XYZpersp, depth] = projectMesh(meshPath, fl, R*Rfix, t, sensorSize, params.input.projectMesh_py_path);
+        headless = ~strcmp(environment(), 'laptop');
+        [RGBpersp, XYZpersp, depth] = projectMesh(meshPath, fl, inv(R)*Rfix, t, sensorSize, params.input.projectMesh_py_path, headless);
         RGB_flag = all(~isnan(XYZpersp), 3);
         
         %compute DSIFT error

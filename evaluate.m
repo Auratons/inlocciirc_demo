@@ -36,9 +36,7 @@ for i=1:size(query_imgnames_all,2)
         synthImage = imresize(synthImage, [numRows numCols]);
     end
 
-    if strcmp(env, 'laptop')
-        imshowpair(queryImage, synthImage, 'montage');
-    end
+    imshowpair(queryImage, synthImage, 'montage');
     saveas(gcf, fullfile(params.evaluation.query_vs_synth.dir, queryName));
 end
 
@@ -134,5 +132,5 @@ for i=1:size(scores,2)
     end
     fprintf(summaryFile, '%g [%%]', scores(i));
 end
-fclose(summaryFile);
 fprintf('\n');
+fclose(summaryFile);
