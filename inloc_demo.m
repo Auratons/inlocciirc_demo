@@ -14,4 +14,6 @@ ht_top10_densePV_localization;
 %4. evaluate
 evaluate;
 
-exit(0); % avoid "MATLAB: management.cpp:671: find: Assertion `' failed."
+if ~strcmp(environment(), "laptop")
+    exit(0); % avoid "MATLAB: management.cpp:671: find: Assertion `' failed."
+end
