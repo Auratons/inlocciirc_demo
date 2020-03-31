@@ -43,6 +43,7 @@ end
 %% quantitative results
 nQueries = size(query_imgnames_all,2);
 errors = struct();
+retrievedPoses = struct();
 for i=1:nQueries
     queryName = query_imgnames_all{i};
     queryImage = imread(fullfile(params.data.dir, params.data.q.dir, queryName));
@@ -100,17 +101,39 @@ for i=1:nQueries
     end
     errors(i).orientation = atan2d(norm(cross(orientation,referenceOrientation)),dot(orientation,referenceOrientation));
     errors(i).inMap = posesRow.inMap;
+    
+    retrievedPoses(i).id = queryId;
+    retrievedPoses(i).x = T(1);
+    retrievedPoses(i).y = T(2);
+    retrievedPoses(i).z = T(3);
+    retrievedPoses(i).dirx = orientation(1);
+    retrievedPoses(i).diry = orientation(2);
+    retrievedPoses(i).dirz = orientation(3);
+    retrievedPoses(i).space = spaceName;
 end
 
+% errors
 errorsTable = struct2table(errors);
 errors = table2struct(sortrows(errorsTable, 'queryId'));
-
 errorsFile = fopen(params.evaluation.errors.path, 'w');
 fprintf(errorsFile, 'id,translation,orientation\n');
 for i=1:nQueries
     fprintf(errorsFile, '%d,%0.2f,%0.2f\n', errors(i).queryId, errors(i).translation, errors(i).orientation);
 end
 fclose(errorsFile);
+
+% retrievedPoses
+retrievedPosesTable = struct2table(retrievedPoses);
+retrievedPoses = table2struct(sortrows(retrievedPosesTable, 'id'));
+retrievedPosesFile = fopen(params.evaluation.retrieved.poses.path, 'w');
+fprintf(retrievedPosesFile, 'id x y z dirx diry dirz space\n');
+for i=1:nQueries
+    fprintf(retrievedPosesFile, '%d %g %g %g %g %g %g %s\n', retrievedPoses(i).id, ...
+        retrievedPoses(i).x, retrievedPoses(i).y, retrievedPoses(i).z, ...
+        retrievedPoses(i).dirx, retrievedPoses(i).diry, retrievedPoses(i).dirz, ...
+        retrievedPoses(i).space);
+end
+fclose(retrievedPosesFile);
 
 %% summary
 summaryFile = fopen(params.evaluation.summary.path, 'w');

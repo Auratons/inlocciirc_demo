@@ -72,5 +72,6 @@ params.evaluation.dir = fullfile(params.data.dir, 'evaluation');
 params.evaluation.query_vs_synth.dir = fullfile(params.evaluation.dir, 'queryVsSynth');
 params.evaluation.errors.path = fullfile(params.evaluation.dir, 'errors.csv');
 params.evaluation.summary.path = fullfile(params.evaluation.dir, 'summary.txt');
+params.evaluation.retrieved.poses.path = fullfile(params.evaluation.dir, 'retrievedPoses.csv');
 
 end
