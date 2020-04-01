@@ -3,10 +3,9 @@ load(params.input.qlist_matname, 'query_imgnames_all');
 densePV_matname = fullfile(params.output.dir, 'densePV_top10_shortlist.mat');
 load(densePV_matname, 'ImgList');
 
-if exist(params.evaluation.dir, 'dir') == 7
-    rmdir(params.evaluation.dir, 's')
+if exist(params.evaluation.dir, 'dir') ~= 7
+    mkdir(params.evaluation.dir)
 end
-mkdir(params.evaluation.dir)
 
 %% visual evaluation
 if exist(params.evaluation.query_vs_synth.dir, 'dir') ~= 7
