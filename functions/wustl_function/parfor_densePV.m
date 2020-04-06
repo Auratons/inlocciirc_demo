@@ -19,8 +19,7 @@ if exist(this_densePV_matname, 'file') ~= 2
         rFix = [180.0, 0.0, 0.0];
         Rfix = rotationMatrix(deg2rad(rFix), 'XYZ');
         sensorSize = [size(Iq,2), size(Iq,1)];
-        headless = ~strcmp(environment(), 'laptop');
-        [RGBpersp, XYZpersp, depth] = projectMesh(meshPath, fl, inv(R)*Rfix, t, sensorSize, params.input.projectMesh_py_path, headless);
+        [RGBpersp, XYZpersp, depth] = projectMesh(meshPath, fl, inv(R)*Rfix, t, sensorSize, false, -1, params.input.projectMesh_py_path);
         RGB_flag = all(~isnan(XYZpersp), 3);
         
         %compute DSIFT error
