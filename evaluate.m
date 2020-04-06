@@ -20,9 +20,11 @@ for i=1:size(query_imgnames_all,2)
     tf = arrayfun(fun, 1:numel(ImgList));
     ImgListRecord = ImgList(find(tf));
     cutoutPath = ImgListRecord.topNname{1};
+    spaceName = strsplit(cutoutPath, '/');
+    spaceName = spaceName{1};
     synthName = strsplit(cutoutPath, '/');
     synthName = synthName{end};
-    synthName = synthName(1:end-size(params.data.db.cutout.imgformat,2));
+    synthName = [spaceName, '_', synthName(1:end-size(params.data.db.cutout.imgformat,2))];
     synthPath = fullfile(params.output.synth.dir, queryName, [synthName, params.output.synth.matformat]);
     load(synthPath, 'RGBpersp');
     numRows = size(queryImage,1);

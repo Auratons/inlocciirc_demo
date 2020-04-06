@@ -2,7 +2,9 @@ function parfor_densePV( qname, dbname, P, params )
 dslevel = 8^-1;
 
 [~, dbbasename, ~] = fileparts(dbname);
-this_densePV_matname = fullfile(params.output.synth.dir, qname, [dbbasename, params.output.synth.matformat]);
+spaceName = strsplit(dbname, '/');
+spaceName = spaceName{1};
+this_densePV_matname = fullfile(params.output.synth.dir, qname, [spaceName, '_', dbbasename, params.output.synth.matformat]);
 
 if exist(this_densePV_matname, 'file') ~= 2
     if all(~isnan(P(:)))
@@ -12,8 +14,7 @@ if exist(this_densePV_matname, 'file') ~= 2
         fl = params.data.q.fl * dslevel;
         R = P(1:3,1:3);
         t = P(1:3,4);
-        spaceName = strsplit(dbname, '/');
-        spaceName = spaceName{1};
+
         meshPath = fullfile(params.data.models.dir, spaceName, 'mesh_rotated.obj');
         t = -inv(R)*t;
         rFix = [180.0, 0.0, 0.0];
