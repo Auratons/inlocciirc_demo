@@ -2,8 +2,7 @@ function parfor_denseGV( cnnq, qname, dbname, params )
 coarselayerlevel = 5;
 finelayerlevel = 3;
 
-[~, dbbasename, ~] = fileparts(dbname);
-this_densegv_matname = fullfile(params.output.gv_dense.dir, qname, [dbbasename, params.output.gv_dense.matformat]);
+this_densegv_matname = fullfile(params.output.gv_dense.dir, qname, buildCutoutName(dbname, params.output.gv_dense.matformat));
 
 if exist(this_densegv_matname, 'file') ~= 2
     

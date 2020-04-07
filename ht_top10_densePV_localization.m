@@ -65,8 +65,8 @@ if exist(densePV_matname, 'file') ~= 2
         ImgList(ii).topNscore = zeros(1, PV_topN);
         ImgList(ii).P = ImgList_densePE(ii).P(1:PV_topN);
         for jj = 1:1:PV_topN
-            [~, dbbasename, ~] = fileparts(ImgList(ii).topNname{jj});
-            load(fullfile(params.output.synth.dir, ImgList(ii).queryname, [dbbasename, params.output.synth.matformat]), 'score');
+            cutoutPath = ImgList(ii).topNname{jj};
+            load(fullfile(params.output.synth.dir, ImgList(ii).queryname, buildCutoutName(cutoutPath, params.output.synth.matformat)), 'score');
             ImgList(ii).topNscore(jj) = score;
         end
         

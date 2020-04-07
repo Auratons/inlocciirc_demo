@@ -35,8 +35,8 @@ if exist(sparsePE_matname, 'file') ~= 2
         ImgList(ii).P = cell(1, pnp_topN);
         
         for jj = 1:1:shortlist_topN
-            [~, dbbasename, ~] = fileparts(ImgList(ii).topNname{jj});
-            this_gvresults = load(fullfile(params.output.gv_sparse.dir, ImgList(ii).queryname, [dbbasename, params.output.gv_sparse.matformat]));
+            cutoutPath = ImgList(ii).topNname{jj};
+            this_gvresults = load(fullfile(params.output.gv_sparse.dir, ImgList(ii).queryname, buildCutoutName(cutoutPath, params.output.gv_sparse.matformat)));
             ImgList(ii).topNscore(jj) = ImgList_original(ii).topNscore(jj) + this_gvresults.inliernum;
         end
         
@@ -63,8 +63,8 @@ if exist(sparsePE_matname, 'file') ~= 2
     %load pose candidates
     for ii = 1:1:length(ImgList)
         for jj = 1:1:pnp_topN
-            [~, dbbasename, ~] = fileparts(ImgList(ii).topNname{jj});
-            pnpresults_matname = fullfile(params.output.pnp_sparse_inlier.dir, ImgList(ii).queryname, [dbbasename, params.output.pnp_sparse_inlier.matformat]);
+            cutoutPath = ImgList(ii).topNname{jj};
+            pnpresults_matname = fullfile(params.output.pnp_sparse_inlier.dir, ImgList(ii).queryname, buildCutoutName(cutoutPath, params.output.pnp_sparse_inlier.matformat));
             pnpresults = load(pnpresults_matname);
             ImgList(ii).P{jj} = pnpresults.P;
         end
@@ -107,8 +107,8 @@ if exist(originalPE_matname, 'file') ~= 2
     for ii = 1:1:length(ImgList)
         ImgList(ii).P = cell(1, pnp_topN);
         for jj = 1:1:pnp_topN
-            [~, dbbasename, ~] = fileparts(ImgList(ii).topNname{jj});
-            pnpresults_matname = fullfile(params.output.pnp_sparse_origin.dir, ImgList(ii).queryname, [dbbasename, params.output.pnp_sparse_origin.matformat]);
+            cutoutPath = ImgList(ii).topNname{jj};
+            pnpresults_matname = fullfile(params.output.pnp_sparse_origin.dir, ImgList(ii).queryname, buildCutoutName(cutoutPath, params.output.pnp_sparse_origin.matformat));
             pnpresults = load(pnpresults_matname);
             ImgList(ii).P{jj} = pnpresults.P;
         end

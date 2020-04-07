@@ -1,11 +1,10 @@
 function parfor_densePE( qname, dbname, params )
 
-[~, dbbasename, ~] = fileparts(dbname);
-this_densepe_matname = fullfile(params.output.pnp_dense_inlier.dir, qname, [dbbasename, params.output.pnp_dense.matformat]);
+this_densepe_matname = fullfile(params.output.pnp_dense_inlier.dir, qname, buildCutoutName(dbname, params.output.pnp_dense.matformat));
 
 if exist(this_densepe_matname, 'file') ~= 2
     %geometric verification results
-    this_densegv_matname = fullfile(params.output.gv_dense.dir, qname, [dbbasename, params.output.gv_dense.matformat]);
+    this_densegv_matname = fullfile(params.output.gv_dense.dir, qname, buildCutoutName(dbname, params.output.gv_dense.matformat));
     if exist(this_densegv_matname, 'file') ~= 2
         qfname = fullfile(params.input.feature.dir, params.data.q.dir, [qname, params.input.feature.q_matformat]);
         cnnq = load(qfname, 'cnn');cnnq = cnnq.cnn;

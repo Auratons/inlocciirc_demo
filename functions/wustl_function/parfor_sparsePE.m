@@ -1,7 +1,6 @@
 function parfor_sparsePE( qname, dbname, params )
 
-[~, dbbasename, ~] = fileparts(dbname);
-this_sparsepe_matname = fullfile(params.output.pnp_sparse_inlier.dir, qname, [dbbasename, params.output.pnp_sparse_inlier.matformat]);
+this_sparsepe_matname = fullfile(params.output.pnp_sparse_inlier.dir, qname, buildCutoutName(dbname, params.output.pnp_sparse_inlier.matformat));
 
 if exist(this_sparsepe_matname, 'file') ~= 2
     Iqsize = size(imread(fullfile(params.data.dir, params.data.q.dir, qname)));
@@ -12,7 +11,7 @@ if exist(this_sparsepe_matname, 'file') ~= 2
     dbfmatname = fullfile(params.input.feature.dir, params.data.db.cutout.dir, [dbname, params.input.feature.db_sps_matformat]);
     features_db = load(dbfmatname);
     %load sparsegv results
-    this_sparsegv_matname = fullfile(params.output.gv_sparse.dir, qname, [dbbasename, params.output.gv_sparse.matformat]);
+    this_sparsegv_matname = fullfile(params.output.gv_sparse.dir, qname, buildCutoutName(dbname, params.output.gv_sparse.matformat));
     gv_info = load(this_sparsegv_matname);
     
     tentative_qindex = gv_info.inls_qidx; tentative_dbindex = gv_info.inls_dbidx;

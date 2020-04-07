@@ -1,10 +1,9 @@
 function parfor_densePV( qname, dbname, P, params )
 dslevel = 8^-1;
 
-[~, dbbasename, ~] = fileparts(dbname);
 spaceName = strsplit(dbname, '/');
 spaceName = spaceName{1};
-this_densePV_matname = fullfile(params.output.synth.dir, qname, [spaceName, '_', dbbasename, params.output.synth.matformat]);
+this_densePV_matname = fullfile(params.output.synth.dir, qname, buildCutoutName(dbname, params.output.synth.matformat));
 
 if exist(this_densePV_matname, 'file') ~= 2
     if all(~isnan(P(:)))

@@ -60,8 +60,8 @@ if exist(densePE_matname, 'file') ~= 2
         end
         
         for jj = 1:1:shortlist_topN
-            [~, dbbasename, ~] = fileparts(ImgList(ii).topNname{jj});
-            this_gvresults = load(fullfile(params.output.gv_dense.dir, ImgList(ii).queryname, [dbbasename, params.output.gv_dense.matformat]));
+            cutoutPath = ImgList(ii).topNname{jj};
+            this_gvresults = load(fullfile(params.output.gv_dense.dir, ImgList(ii).queryname, buildCutoutName(cutoutPath, params.output.gv_dense.matformat)));
             ImgList(ii).topNscore(jj) = ImgList_original(ii).topNscore(jj) + size(this_gvresults.inls12, 2);
         end
         
@@ -92,8 +92,8 @@ if exist(densePE_matname, 'file') ~= 2
     for ii = 1:1:length(ImgList)
         ImgList(ii).P = cell(1, pnp_topN);
         for jj = 1:1:pnp_topN
-            [~, dbbasename, ~] = fileparts(ImgList(ii).topNname{jj});
-            this_densepe_matname = fullfile(params.output.pnp_dense_inlier.dir, ImgList(ii).queryname, [dbbasename, params.output.pnp_dense.matformat]);
+            cutoutPath = ImgList(ii).topNname{jj};
+            this_densepe_matname = fullfile(params.output.pnp_dense_inlier.dir, ImgList(ii).queryname, buildCutoutName(cutoutPath, params.output.pnp_dense.matformat));
             load(this_densepe_matname, 'P');
             ImgList(ii).P{jj} = P;
         end

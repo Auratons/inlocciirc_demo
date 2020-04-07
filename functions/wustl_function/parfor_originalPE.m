@@ -1,7 +1,6 @@
 function parfor_originalPE( qname, dbname, params )
 
-[~, dbbasename, ~] = fileparts(dbname);
-this_originalpe_matname = fullfile(params.output.pnp_sparse_origin.dir, qname, [dbbasename, params.output.pnp_sparse_origin.matformat]);
+this_originalpe_matname = fullfile(params.output.pnp_sparse_origin.dir, qname, buildCutoutName(dbname, params.output.pnp_sparse_origin.matformat));
 
 Iqsize = size(imread(fullfile(params.data.dir, params.data.q.dir, qname)));
 
@@ -12,7 +11,7 @@ if exist(this_originalpe_matname, 'file') ~= 2
     dbfmatname = fullfile(params.input.feature.dir, params.data.db.cutout.dir, [dbname, params.input.feature.db_sps_matformat]);
     features_db = load(dbfmatname);
     %load sparsegv results
-    this_sparsegv_matname = fullfile(params.output.gv_sparse.dir, qname, [dbbasename, params.output.gv_sparse.matformat]);
+    this_sparsegv_matname = fullfile(params.output.gv_sparse.dir, qname, buildCutoutName(dbname, params.output.gv_sparse.matformat));
     gv_info = load(this_sparsegv_matname);
     
     if isempty(gv_info.matches)

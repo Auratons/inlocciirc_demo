@@ -1,8 +1,6 @@
 function parfor_sparseGV( qname, dbname, params )
 
-
-[~, dbbasename, ~] = fileparts(dbname);
-this_sparsegv_matname = fullfile(params.output.gv_sparse.dir, qname, [dbbasename, params.output.gv_sparse.matformat]);
+this_sparsegv_matname = fullfile(params.output.gv_sparse.dir, qname, buildCutoutName(dbname, params.output.gv_sparse.matformat));
 
 if exist(this_sparsegv_matname, 'file') ~= 2
     %load features
