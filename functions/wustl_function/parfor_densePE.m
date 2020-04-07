@@ -39,7 +39,7 @@ if exist(this_densepe_matname, 'file') ~= 2
     indx = sub2ind(size(XYZcut(:,:,1)),tent_xdb2d(2,:),tent_xdb2d(1,:));
     X = XYZcut(:,:,1);Y = XYZcut(:,:,2);Z = XYZcut(:,:,3);
     tent_xdb3d = [X(indx); Y(indx); Z(indx)];
-    tent_xdb3d = bsxfun(@plus, P(1:3, 1:3)*tent_xdb3d, P(1:3, 4));
+    %tent_xdb3d = bsxfun(@plus, P(1:3, 1:3)*tent_xdb3d, P(1:3, 4)); % why??
     %Select keypoint correspond to 3D
     idx_3d = all(~isnan(tent_xdb3d), 1);
     tent_xq2d = tent_xq2d(:, idx_3d);
