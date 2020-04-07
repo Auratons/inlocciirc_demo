@@ -69,32 +69,38 @@ if exist(this_densepe_matname, 'file') ~= 2
     end
     save('-v6', this_densepe_matname, 'P', 'inls', 'tentatives_2d', 'tentatives_3d');
     
-%     %debug
-%     Iq = imread(fullfile(params.data.dir, params.data.q.dir, qname));
-%     Idb = imread(fullfile(params.data.dir, params.data.db.cutout.dir, dbname));
-%     points.x2 = tentatives_2d(3, inls);
-%     points.y2 = tentatives_2d(4, inls);
-%     points.x1 = tentatives_2d(1, inls);
-%     points.y1 = tentatives_2d(2, inls);
-%     points.color = 'g';
-%     points.facecolor = 'g';
-%     points.markersize = 60;
-%     points.linestyle = '-';
-%     points.linewidth = 1.0;
-%     show_matches2_vertical( Iq, Idb, points );
-%     
-%     points.x2 = tentatives_2d(3, :);
-%     points.y2 = tentatives_2d(4, :);
-%     points.x1 = tentatives_2d(1, :);
-%     points.y1 = tentatives_2d(2, :);
-%     points.color = 'r';
-%     points.facecolor = 'r';
-%     points.markersize = 60;
-%     points.linestyle = '-';
-%     points.linewidth = 1.0;
-%     show_matches2_vertical( Iq, Idb, points );
-%     
-%     keyboard;    
+%      %% debug
+%      qname = '1.jpg';
+%      dbname = 'B-315/3/cutout_3_-120_0.jpg';
+%      dbname = 'B-315/1/cutout_1_-60_0.jpg';
+%      inlierPath = '/Volumes/GoogleDrive/Můj disk/ARTwin/InLocCIIRC_dataset/outputs/PnP_dense_inlier/1.jpg/cutout_B-315_3 -120 0.pnp_dense_inlier.mat';
+%      inlierPath = '/Volumes/Elements/backup/1-4-2020/InLocCIIRC_dataset/outputs/PnP_dense_inlier/1.jpg/cutout_1_-60_0.pnp_dense_inlier.mat';
+%      load(inlierPath, 'P', 'inls', 'tentatives_2d', 'tentatives_3d');
+%      Iq = imread(fullfile(params.data.dir, params.data.q.dir, qname));
+%      Idb = imread(fullfile(params.data.dir, params.data.db.cutout.dir, dbname));
+%      points.x2 = tentatives_2d(3, inls);
+%      points.y2 = tentatives_2d(4, inls);
+%      points.x1 = tentatives_2d(1, inls);
+%      points.y1 = tentatives_2d(2, inls);
+%      points.color = 'g';
+%      points.facecolor = 'g';
+%      points.markersize = 60;
+%      points.linestyle = '-';
+%      points.linewidth = 1.0;
+%      show_matches2_vertical( Iq, Idb, points );
+%      
+%      points.x2 = tentatives_2d(3, :);
+%      points.y2 = tentatives_2d(4, :);
+%      points.x1 = tentatives_2d(1, :);
+%      points.y1 = tentatives_2d(2, :);
+%      points.color = 'r';
+%      points.facecolor = 'r';
+%      points.markersize = 60;
+%      points.linestyle = '-';
+%      points.linewidth = 1.0;
+%      show_matches2_vertical( Iq, Idb, points );
+%      
+%      keyboard;    
 end
 
 
