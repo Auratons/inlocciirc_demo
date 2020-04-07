@@ -8,6 +8,7 @@ addpath('functions/netvlad/');
 addpath('functions/inpaint_nans');
 addpath('functions/InLocCIIRC_utils/projectMesh');
 addpath('functions/InLocCIIRC_utils/rotationMatrix');
+addpath('functions/InLocCIIRC_utils/buildCutoutName');
 
 env = environment();
 if strcmp(env, 'ciirc')
