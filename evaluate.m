@@ -3,15 +3,11 @@ load(params.input.qlist_matname, 'query_imgnames_all');
 densePV_matname = fullfile(params.output.dir, 'densePV_top10_shortlist.mat');
 load(densePV_matname, 'ImgList');
 
-if exist(params.evaluation.dir, 'dir') ~= 7
-    mkdir(params.evaluation.dir)
-end
+mkdirIfNonExistent(params.evaluation.dir);
+mkdirIfNonExistent(params.evaluation.retrieved.poses.dir);
+mkdirIfNonExistent(params.evaluation.query_vs_synth.dir);
 
 %% visual evaluation
-if exist(params.evaluation.query_vs_synth.dir, 'dir') ~= 7
-    mkdir(params.evaluation.query_vs_synth.dir);
-end
-
 for i=1:size(query_imgnames_all,2)
     queryName = query_imgnames_all{i};
     queryImage = imread(fullfile(params.data.dir, params.data.q.dir, queryName));
@@ -39,7 +35,7 @@ end
 %% quantitative results
 nQueries = size(query_imgnames_all,2);
 errors = struct();
-retrievedPoses = struct();
+retrievedQueries = struct();
 for i=1:nQueries
     queryName = query_imgnames_all{i};
     queryImage = imread(fullfile(params.data.dir, params.data.q.dir, queryName));
@@ -55,39 +51,31 @@ for i=1:nQueries
     transPath = fullfile(params.data.dir, params.data.db.trans.dir, spaceName, 'transformations', sprintf('trans_%s.txt', sweepId));
     P1 = load_CIIRC_transformation(transPath);
     R1 = P1(1:3,1:3);
-    T1 = P1(1:3,4);
     
     P2 = ImgListRecord.P{1};
     if any(isnan(P2(:)))
         T = nan(3,1);
-        orientation = nan(3,1);
+        R = nan(3,3);
     else
-        R2 = P2(1:3,1:3); % in fact this is K*R - are you sure? viz demo
-        T2 = P2(1:3,4);
-
         P = P2*P1;
         T = -inv(P(:,1:3))*P(:,4);
-        initialDirection = [0.0; 0.0; -1.0];
-        rFix = [180.0, 0.0, 0.0];
-        Rfix = rotationMatrix(deg2rad(rFix), 'XYZ');
-        orientation = R2 * (R1 * (Rfix * initialDirection));
-        % very ugly magic hack
-        if orientation(3) < 0
-            orientation = orientation .* [1.0; -1.0; 1.0];
-        end
+        R = P(1:3,1:3);
     end
     
-    posesPath = fullfile(params.data.dir, params.data.q.dir, 'poses.csv');
-    posesTable = readtable(posesPath);
+    descriptionsPath = fullfile(params.data.dir, params.data.q.dir, 'descriptions.csv');
+    descriptionsTable = readtable(descriptionsPath);
     queryId = strsplit(queryName, '.');
     queryId = queryId{1};
     queryId = uint32(str2num(queryId));
-    posesRow = posesTable(posesTable.id==queryId, :);
+    descriptionsRow = descriptionsTable(descriptionsTable.id==queryId, :);
     
-    referenceSpace = posesRow.space{1,1};
+    referenceSpace = descriptionsRow.space{1,1};
 
-    referenceT = [posesRow.x; posesRow.y; posesRow.z];
-    referenceOrientation = [posesRow.dirx; posesRow.diry; posesRow.dirz];
+    queryPoseFilename = sprintf('%d.txt', queryId);
+    posePath = fullfile(params.data.dir, params.data.q.dir, 'poses', queryPoseFilename);
+    referenceP = load_CIIRC_transformation(posePath);
+    referenceT = -inv(referenceP(1:3,1:3))*referenceP(1:3,4);
+    referenceR = referenceP(1:3,1:3);
     
     errors(i).queryId = queryId;
     if strcmp(spaceName, referenceSpace)
@@ -95,17 +83,18 @@ for i=1:nQueries
     else
         errors(i).translation = 666;
     end
-    errors(i).orientation = atan2d(norm(cross(orientation,referenceOrientation)),dot(orientation,referenceOrientation));
-    errors(i).inMap = posesRow.inMap;
+    errors(i).orientation = rotationDistance(referenceR, R);
+    errors(i).inMap = descriptionsRow.inMap;
+
+    retrievedPosePath = fullfile(params.evaluation.retrieved.poses.dir, queryPoseFilename);
+    retrievedPoseFile = fopen(retrievedPosePath, 'w');
+    P = [P; 0 0 0 1];
+    P_str = P_to_str(P);
+    fprintf(retrievedPoseFile, '%s', P_str);
+    fclose(retrievedPoseFile);
     
-    retrievedPoses(i).id = queryId;
-    retrievedPoses(i).x = T(1);
-    retrievedPoses(i).y = T(2);
-    retrievedPoses(i).z = T(3);
-    retrievedPoses(i).dirx = orientation(1);
-    retrievedPoses(i).diry = orientation(2);
-    retrievedPoses(i).dirz = orientation(3);
-    retrievedPoses(i).space = spaceName;
+    retrievedQueries(i).id = queryId;
+    retrievedQueries(i).space = spaceName;
 end
 
 % errors
@@ -122,18 +111,16 @@ for i=1:nQueries
 end
 fclose(errorsFile);
 
-% retrievedPoses
-retrievedPosesTable = struct2table(retrievedPoses);
-retrievedPoses = table2struct(sortrows(retrievedPosesTable, 'id'));
-retrievedPosesFile = fopen(params.evaluation.retrieved.poses.path, 'w');
-fprintf(retrievedPosesFile, 'id x y z dirx diry dirz space\n');
+% retrievedQueries
+retrievedQueriesTable = struct2table(retrievedQueries);
+retrievedQueries = table2struct(sortrows(retrievedQueriesTable, 'id'));
+retrievedQueriesFile = fopen(params.evaluation.retrieved.queries.path, 'w');
+fprintf(retrievedQueriesFile, 'id space\n');
 for i=1:nQueries
-    fprintf(retrievedPosesFile, '%d %g %g %g %g %g %g %s\n', retrievedPoses(i).id, ...
-        retrievedPoses(i).x, retrievedPoses(i).y, retrievedPoses(i).z, ...
-        retrievedPoses(i).dirx, retrievedPoses(i).diry, retrievedPoses(i).dirz, ...
-        retrievedPoses(i).space);
+    fprintf(retrievedQueriesFile, '%d %s\n', retrievedQueries(i).id, ...
+        retrievedQueries(i).space);
 end
-fclose(retrievedPosesFile);
+fclose(retrievedQueriesFile);
 
 %% summary
 summaryFile = fopen(params.evaluation.summary.path, 'w');

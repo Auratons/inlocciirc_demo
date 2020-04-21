@@ -9,6 +9,9 @@ addpath('functions/inpaint_nans');
 addpath('functions/InLocCIIRC_utils/projectMesh');
 addpath('functions/InLocCIIRC_utils/rotationMatrix');
 addpath('functions/InLocCIIRC_utils/buildCutoutName');
+addpath('functions/InLocCIIRC_utils/mkdirIfNonExistent');
+addpath('functions/InLocCIIRC_utils/rotationDistance');
+addpath('functions/InLocCIIRC_utils/P_to_str');
 
 env = environment();
 if strcmp(env, 'ciirc')
