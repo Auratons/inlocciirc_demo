@@ -25,9 +25,9 @@ if exist(this_densepe_matname, 'file') ~= 2
                 sprintf('trans_%s.txt', info.scan_id));
     P = load_CIIRC_transformation(transformation_txtname);
     %Feature upsampling
-    Iqsize = size(imread(fullfile(params.data.dir, params.data.q.dir, qname)));
     Idbsize = size(XYZcut);
-    tent_xq2d = at_featureupsample(tent_xq2d,this_gvresults.cnnfeat1size,Iqsize);
+    Iqsize = Idbsize;
+    tent_xq2d = at_featureupsample(tent_xq2d,this_gvresults.cnnfeat1size,Idbsize);
     tent_xdb2d = at_featureupsample(tent_xdb2d,this_gvresults.cnnfeat2size,Idbsize);
     %query ray
     Kq = [params.data.q.fl, 0, Iqsize(2)/2.0; ...

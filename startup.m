@@ -12,6 +12,7 @@ addpath('functions/InLocCIIRC_utils/buildCutoutName');
 addpath('functions/InLocCIIRC_utils/mkdirIfNonExistent');
 addpath('functions/InLocCIIRC_utils/rotationDistance');
 addpath('functions/InLocCIIRC_utils/P_to_str');
+addpath('functions/InLocCIIRC_utils/at_netvlad_function');
 
 env = environment();
 if strcmp(env, 'ciirc')

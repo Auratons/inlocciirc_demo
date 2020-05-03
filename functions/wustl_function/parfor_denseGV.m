@@ -10,8 +10,6 @@ if exist(this_densegv_matname, 'file') ~= 2
     dbfname = fullfile(params.input.feature.dir, params.data.db.cutout.dir, [dbname, params.input.feature.db_matformat]);
     cnndb = load(dbfname, 'cnn');cnndb = cnndb.cnn;
     
-    
-    
     %coarse-to-fine matching
     cnnfeat1size = size(cnnq{finelayerlevel}.x);
     cnnfeat2size = size(cnndb{finelayerlevel}.x);

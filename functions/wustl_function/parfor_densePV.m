@@ -1,5 +1,4 @@
 function parfor_densePV( qname, dbname, P, params )
-dslevel = 8^-1;
 
 spaceName = strsplit(dbname, '/');
 spaceName = spaceName{1};
@@ -9,8 +8,8 @@ if exist(this_densePV_matname, 'file') ~= 2
     if all(~isnan(P(:)))
         
         %load downsampled images
-        Iq = imresize(imread(fullfile(params.data.dir, params.data.q.dir, qname)), dslevel);
-        fl = params.data.q.fl * dslevel;
+        Iq = imresize(imread(fullfile(params.data.dir, params.data.q.dir, qname)), params.data.q.dslevel);
+        fl = params.data.q.fl * params.data.q.dslevel;
         R = P(1:3,1:3);
         t = P(1:3,4);
 

@@ -6,6 +6,7 @@ params = struct();
 
 %WUSTL dataset
 env = environment();
+queryType = 'HoloLens1'; % one of [s10e, HoloLens1, HoloLens2]
 if strcmp(env, 'ciirc')
     params.data.dir = '/home/lucivpav/InLocCIIRC_dataset';
     params.data.netvlad.dir = '/home/lucivpav/NetVLAD';
@@ -29,9 +30,16 @@ params.data.db.cutout.matformat = '.mat';
 %%alignments
 params.data.db.trans.dir = 'alignments';
 %query
-params.data.q.dir = 'query';
+if strcmp(queryType, 'HoloLens1')
+    params.data.q.dir = 'query-HoloLens1';
+    params.data.q.fl = 1015; % [px]
+    params.data.q.dslevel = 2^-1;
+elseif strcmp(queryType, 's10e')
+    params.data.q.dir = 'query-s10e';
+    params.data.q.fl = 3172; % [px]
+    params.data.q.dslevel = 8^-1;
+end
 params.data.q.imgformat = '.jpg';
-params.data.q.fl = 3172; % [px]
 % models
 params.data.models.dir = fullfile(params.data.dir, 'models');
 
