@@ -28,8 +28,13 @@ for i=1:size(query_imgnames_all,2)
         synthImage = imresize(synthImage, [numRows numCols]);
     end
 
-    imshowpair(queryImage, synthImage, 'montage');
-    saveas(gcf, fullfile(params.evaluation.query_vs_synth.dir, queryName));
+    queryId = strsplit(queryName, '.');
+    queryId = queryId{1};
+    imwrite(queryImage, fullfile(params.evaluation.query_vs_synth.dir, sprintf('%s-query.jpg', queryId)))
+    imwrite(synthImage, fullfile(params.evaluation.query_vs_synth.dir, sprintf('%s-synth.jpg', queryId)))
+
+    %imshowpair(queryImage, synthImage, 'montage');
+    %saveas(gcf, fullfile(params.evaluation.query_vs_synth.dir, queryName));
 end
 
 %% quantitative results
