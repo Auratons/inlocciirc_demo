@@ -32,7 +32,7 @@ params.data.db.trans.dir = 'alignments';
 %query
 if strcmp(queryType, 'HoloLens1')
     params.data.q.dir = 'query-HoloLens1';
-    params.data.q.fl = 1015; % [px]
+    params.data.q.fl = 1038; % [px]
     params.data.q.dslevel = 2^-1;
 elseif strcmp(queryType, 's10e')
     params.data.q.dir = 'query-s10e';
