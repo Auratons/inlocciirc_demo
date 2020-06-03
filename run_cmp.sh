@@ -3,7 +3,7 @@ nvidia-smi --query-gpu=index,name,utilization.memory --format=csv
 echo -n "Please select a GPU: "
 read GPU_ID
 export CUDA_VISIBLE_DEVICES=$GPU_ID
-module load MATLAB/9.4
+module load MATLAB/9.7
 module load SuiteSparse/5.1.2-foss-2018b-METIS-5.1.0
 module load LLVM/6.0.0-GCCcore-7.3.0 # avoid pyrender/OSMesa crash
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/datagrid/personal/lucivpav/gflags-2.2.2/build/lib:/datagrid/personal/lucivpav/InLocCIIRC_demo/functions/vlfeat/toolbox/mex/mexa64
