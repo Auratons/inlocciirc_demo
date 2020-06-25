@@ -27,6 +27,7 @@ params.data.db.scan.matformat = '.ptx.mat';
 params.data.db.cutout.dir = 'cutouts';
 params.data.db.cutout.imgformat = '.jpg';
 params.data.db.cutout.matformat = '.mat';
+% NOTE: params.data.db.cutout.size is set automatically
 %%alignments
 params.data.db.trans.dir = 'alignments';
 %query

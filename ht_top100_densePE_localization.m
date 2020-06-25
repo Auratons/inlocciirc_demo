@@ -18,7 +18,9 @@ if exist(densePE_matname, 'file') ~= 2
     for ii = 1:1:length(ImgList_original)
         q_densefeat_matname = fullfile(params.input.feature.dir, params.data.q.dir, [ImgList_original(ii).queryname, params.input.feature.q_matformat]);
         if exist(q_densefeat_matname, 'file') ~= 2
-            cnn = at_serialAllFeats_convfeat(net, query_dir, ImgList_original(ii).queryname, 'useGPU', true);
+            queryImage = load_query_image_compatible_with_cutouts(fullfile(query_dir, ImgList_original(ii).queryname), ...
+                                                                        params.data.db.cutout.size);
+            cnn = at_serialAllFeats_convfeat(net, queryImage, 'useGPU', true);
             cnn{1} = [];
             cnn{2} = [];
             cnn{4} = [];
@@ -32,7 +34,8 @@ if exist(densePE_matname, 'file') ~= 2
             db_densefeat_matname = fullfile(params.input.feature.dir, params.data.db.cutout.dir, ...
                 [ImgList_original(ii).topNname{jj}, params.input.feature.db_matformat]);
             if exist(db_densefeat_matname, 'file') ~= 2
-                cnn = at_serialAllFeats_convfeat(net, db_dir, ImgList_original(ii).topNname{jj}, 'useGPU', true);
+                cutoutImage = imread(fullfile(db_dir, ImgList_original(ii).topNname{jj}));
+                cnn = at_serialAllFeats_convfeat(net, cutoutImage, 'useGPU', true);
                 cnn{1} = [];
                 cnn{2} = [];
                 cnn{4} = [];
