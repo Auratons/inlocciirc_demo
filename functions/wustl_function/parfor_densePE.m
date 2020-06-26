@@ -25,8 +25,8 @@ if exist(this_densepe_matname, 'file') ~= 2
                 sprintf('trans_%s.txt', info.scan_id));
     P = load_CIIRC_transformation(transformation_txtname);
     %Feature upsampling
-    Iqsize = Idbsize; % we padded the queries to match cutout aspect ratio
     Idbsize = size(XYZcut);
+    Iqsize = Idbsize; % we padded the queries to match cutout aspect ratio
     tent_xq2d = at_featureupsample(tent_xq2d,this_gvresults.cnnfeat1size,Iqsize);
     tent_xdb2d = at_featureupsample(tent_xdb2d,this_gvresults.cnnfeat2size,Idbsize);
     %query ray
