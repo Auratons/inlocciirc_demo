@@ -193,3 +193,4 @@ end
 fprintf(summaryFile, ' -- OffMap\n');
 
 fclose(summaryFile);
+disp(fileread(params.evaluation.summary.path));
