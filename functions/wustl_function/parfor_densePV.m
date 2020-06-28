@@ -8,12 +8,12 @@ if exist(this_densePV_matname, 'file') ~= 2
     if all(~isnan(P(:)))
         
         %load downsampled images
-        Iq = imresize(imread(fullfile(params.data.dir, params.data.q.dir, qname)), params.data.q.dslevel);
-        fl = params.data.q.fl * params.data.q.dslevel;
+        Iq = imresize(imread(fullfile(params.dataset.query.dir, qname)), params.dataset.query.dslevel);
+        fl = params.dataset.query.fl * params.dataset.query.dslevel;
         R = P(1:3,1:3);
         t = P(1:3,4);
 
-        meshPath = fullfile(params.data.models.dir, spaceName, 'mesh_rotated.obj');
+        meshPath = fullfile(params.dataset.models.dir, spaceName, 'mesh_rotated.obj');
         t = -inv(R)*t;
         rFix = [180.0, 0.0, 0.0];
         Rfix = rotationMatrix(deg2rad(rFix), 'XYZ');

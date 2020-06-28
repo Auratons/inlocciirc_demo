@@ -46,9 +46,6 @@ We open an online evaluation tool for visual localization on the InLoc dataset (
 
 * Download pre-trained CNN model from <http://www.di.ens.fr/willow/research/netvlad/>
 
-* Modify `` setup_project_ht_WUSTL.m ``
-    * line 8: `` params.data.dir = '/path/to/dataset'; ``
-
 * Execute `` startup `` and `` inloc_demo `` in Matlab
 
 * Optional: `` sparse_demo `` executes the baseline indoor visual localization using spase features. 
@@ -106,35 +103,6 @@ Until then, we can evaluate your own localization results if you send it to <hta
         Each file contains 1x5 cell array named `` cnn `` that consists of multiple-level CNN intermediate feature map for each cell. 
         We use 3rd and 5th layers for our coarse-to-fine matching, so we recommend to keep the other cells empty to eliminate loading time. 
         If there are no pre-computed features, our tool computes dense features by using model pre-trained as the part of NetVLAD. 
-
-* Modify `` setup_project_ht_WUSTL.m ``
-
-    In our demo, `` setup_project_ht_WUSTL.m `` is firstly called and defines all paths and file name formats. 
-    If you want to change input/output directories or file names format, modify description in the function. 
-
-    setup_project_ht_WUSTL.m line 32-49: 
-
-    ```
-    %input
-    params.input.dir = 'inputs';
-    params.input.dblist_matname = fullfile(params.input.dir, 'cutout_imgnames_all.mat');%string cell containing cutout image names
-    params.input.qlist_matname = fullfile(params.input.dir, 'query_imgnames_all.mat');%string cell containing query image names
-    params.input.score_matname = fullfile(params.input.dir, 'scores.mat');%retrieval score matrix
-    params.input.feature.dir = fullfile(params.input.dir, 'features');
-    params.input.feature.db_matformat = '.features.dense.mat';
-    params.input.feature.q_matformat = '.features.dense.mat';
-
-
-    %output
-    params.output.dir = 'outputs';
-    params.output.gv_dense.dir = fullfile(params.output.dir, 'gv_dense');%dense matching results (directory)
-    params.output.gv_dense.matformat = '.gv_dense.mat';%dense matching results (file extention)
-    params.output.pnp_dense_inlier.dir = fullfile(params.output.dir, 'PnP_dense_inlier');%PnP results (directory)
-    params.output.pnp_dense.matformat = '.pnp_dense_inlier.mat';%PnP results (file extention)
-    params.output.synth.dir = fullfile(params.output.dir, 'synthesized');%View synthesis results (directory)
-    params.output.synth.matformat = '.synth.mat';%View synthesis results (file extention)
-
-    ```
 
 ### LICENSE
 

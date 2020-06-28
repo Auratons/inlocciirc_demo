@@ -11,15 +11,15 @@ densePE_matname = fullfile(params.output.dir, 'densePE_top100_shortlist.mat');
 if exist(densePE_matname, 'file') ~= 2
     
     %dense feature extraction
-    net = load(params.data.netvlad.pretrained);
+    net = load(params.netvlad.dataset.pretrained);
     net = net.net;
     net= relja_simplenn_tidy(net);
     net= relja_cropToLayer(net, 'preL2');
     for ii = 1:1:length(ImgList_original)
-        q_densefeat_matname = fullfile(params.input.feature.dir, params.data.q.dir, [ImgList_original(ii).queryname, params.input.feature.q_matformat]);
+        q_densefeat_matname = fullfile(params.input.feature.dir, params.dataset.query.dirname, [ImgList_original(ii).queryname, params.input.feature.q_matformat]);
         if exist(q_densefeat_matname, 'file') ~= 2
             queryImage = load_query_image_compatible_with_cutouts(fullfile(query_dir, ImgList_original(ii).queryname), ...
-                                                                        params.data.db.cutout.size);
+                                                                        params.dataset.db.cutout.size);
             cnn = at_serialAllFeats_convfeat(net, queryImage, 'useGPU', true);
             cnn{1} = [];
             cnn{2} = [];
@@ -31,7 +31,7 @@ if exist(densePE_matname, 'file') ~= 2
         end
         
         for jj = 1:1:shortlist_topN
-            db_densefeat_matname = fullfile(params.input.feature.dir, params.data.db.cutout.dir, ...
+            db_densefeat_matname = fullfile(params.input.feature.dir, params.dataset.db.cutout.dir, ...
                 [ImgList_original(ii).topNname{jj}, params.input.feature.db_matformat]);
             if exist(db_densefeat_matname, 'file') ~= 2
                 cutoutImage = imread(fullfile(db_dir, ImgList_original(ii).topNname{jj}));
@@ -54,7 +54,7 @@ if exist(densePE_matname, 'file') ~= 2
         ImgList(ii).topNname = ImgList_original(ii).topNname(1:shortlist_topN);
         
         %preload query feature
-        qfname = fullfile(params.input.feature.dir, params.data.q.dir, [ImgList(ii).queryname, params.input.feature.q_matformat]);
+        qfname = fullfile(params.input.feature.dir, params.dataset.query.dirname, [ImgList(ii).queryname, params.input.feature.q_matformat]);
         cnnq = load(qfname, 'cnn');cnnq = cnnq.cnn;
         
         parfor kk = 1:1:shortlist_topN

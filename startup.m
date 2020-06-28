@@ -14,6 +14,7 @@ addpath('functions/InLocCIIRC_utils/rotationDistance');
 addpath('functions/InLocCIIRC_utils/P_to_str');
 addpath('functions/InLocCIIRC_utils/at_netvlad_function');
 addpath('functions/InLocCIIRC_utils/environment');
+addpath('functions/InLocCIIRC_utils/load_CIIRC_transformation');
 
 env = environment();
 if strcmp(env, 'ciirc')

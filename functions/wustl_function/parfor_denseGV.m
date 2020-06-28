@@ -7,7 +7,7 @@ this_densegv_matname = fullfile(params.output.gv_dense.dir, qname, buildCutoutNa
 if exist(this_densegv_matname, 'file') ~= 2
     
     %load input feature
-    dbfname = fullfile(params.input.feature.dir, params.data.db.cutout.dir, [dbname, params.input.feature.db_matformat]);
+    dbfname = fullfile(params.input.feature.dir, params.dataset.db.cutout.dir, [dbname, params.input.feature.db_matformat]);
     cnndb = load(dbfname, 'cnn');cnndb = cnndb.cnn;
     
     %coarse-to-fine matching
@@ -24,8 +24,8 @@ if exist(this_densegv_matname, 'file') ~= 2
     
     
 %     %debug
-%     im1 = imresize(imread(fullfile(params.data.dir, params.data.q.dir, qname)), cnnfeat1size(1:2));
-%     im2 = imresize(imread(fullfile(params.data.dir, params.data.db.cutout.dir, dbname)), cnnfeat2size(1:2));
+%     im1 = imresize(imread(fullfile(params.dataset.query.dir, qname)), cnnfeat1size(1:2));
+%     im2 = imresize(imread(fullfile(params.dataset.db.cutouts.dir, dbname)), cnnfeat2size(1:2));
 %     figure();
 %     ultimateSubplot ( 2, 1, 1, 1, 0.01, 0.05 );
 %     imshow(rgb2gray(im1));hold on;

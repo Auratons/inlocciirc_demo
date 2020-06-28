@@ -10,7 +10,7 @@ mkdirIfNonExistent(params.evaluation.query_vs_synth.dir);
 %% visual evaluation
 for i=1:size(query_imgnames_all,2)
     queryName = query_imgnames_all{i};
-    queryImage = imread(fullfile(params.data.dir, params.data.q.dir, queryName));
+    queryImage = imread(fullfile(params.dataset.query.dir, queryName));
     
     fun = @(x) strcmp(ImgList(x).queryname,queryName);
     tf = arrayfun(fun, 1:numel(ImgList));
@@ -43,7 +43,7 @@ errors = struct();
 retrievedQueries = struct();
 for i=1:nQueries
     queryName = query_imgnames_all{i};
-    queryImage = imread(fullfile(params.data.dir, params.data.q.dir, queryName));
+    queryImage = imread(fullfile(params.dataset.query.dir, queryName));
     
     fun = @(x) strcmp(ImgList(x).queryname,queryName);
     tf = arrayfun(fun, 1:numel(ImgList));
@@ -53,7 +53,7 @@ for i=1:nQueries
     cutoutPath = strsplit(cutoutPath, '/');
     spaceName = cutoutPath{1};
     sweepId = cutoutPath{2};
-    transPath = fullfile(params.data.dir, params.data.db.trans.dir, spaceName, 'transformations', sprintf('trans_%s.txt', sweepId));
+    transPath = fullfile(params.dataset.db.trans.dir, spaceName, 'transformations', sprintf('trans_%s.txt', sweepId));
     P1 = load_CIIRC_transformation(transPath);
     R1 = P1(1:3,1:3);
     
@@ -67,7 +67,7 @@ for i=1:nQueries
         R = P(1:3,1:3);
     end
     
-    descriptionsPath = fullfile(params.data.dir, params.data.q.dir, 'descriptions.csv');
+    descriptionsPath = fullfile(params.dataset.query.dir, 'descriptions.csv');
     descriptionsTable = readtable(descriptionsPath);
     queryId = strsplit(queryName, '.');
     queryId = queryId{1};
@@ -77,7 +77,7 @@ for i=1:nQueries
     referenceSpace = descriptionsRow.space{1,1};
 
     queryPoseFilename = sprintf('%d.txt', queryId);
-    posePath = fullfile(params.data.dir, params.data.q.dir, 'poses', queryPoseFilename);
+    posePath = fullfile(params.dataset.query.dir, 'poses', queryPoseFilename);
     referenceP = load_CIIRC_transformation(posePath);
     referenceT = -inv(referenceP(1:3,1:3))*referenceP(1:3,4);
     referenceR = referenceP(1:3,1:3);

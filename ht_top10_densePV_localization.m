@@ -24,7 +24,7 @@ if exist(densePV_matname, 'file') ~= 2
     for ii = 1:1:length(dblist)
         this_floorid = strsplit(dblist{ii}, '/');this_floorid = this_floorid{1};
         info = parse_WUSTL_cutoutname( dblist{ii} );
-        dbscanlist{ii} = strcat(this_floorid, params.data.db.scan.matformat);
+        dbscanlist{ii} = strcat(this_floorid, params.dataset.db.scan.matformat);
         dbscantranslist{ii} = fullfile(this_floorid, 'transformations', ['trans_', info.scan_id, '.txt']);
     end
     [dbscanlist_uniq, sort_idx, uniq_idx] = unique(dbscanlist);
@@ -50,7 +50,7 @@ if exist(densePV_matname, 'file') ~= 2
         
         %compute synthesized images and similarity scores
         parfor jj = 1:1:length(this_qlist)
-            P = load_CIIRC_transformation(fullfile(params.data.dir, params.data.db.trans.dir, this_dbscantrans{jj}));
+            P = load_CIIRC_transformation(fullfile(params.dataset.dir, params.data.db.trans.dir, this_dbscantrans{jj}));
             parfor_densePV( this_qlist{jj}, this_dblist{jj}, this_Plist{jj} * P, params );
             fprintf('densePV: %d / %d done. \n', jj, length(this_qlist));
         end

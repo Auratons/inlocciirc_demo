@@ -6,7 +6,7 @@ if exist(this_densepe_matname, 'file') ~= 2
     %geometric verification results
     this_densegv_matname = fullfile(params.output.gv_dense.dir, qname, buildCutoutName(dbname, params.output.gv_dense.matformat));
     if exist(this_densegv_matname, 'file') ~= 2
-        qfname = fullfile(params.input.feature.dir, params.data.q.dir, [qname, params.input.feature.q_matformat]);
+        qfname = fullfile(params.input.feature.dir, params.dataset.query.dirname, [qname, params.input.feature.q_matformat]);
         cnnq = load(qfname, 'cnn');cnnq = cnnq.cnn;
         parfor_denseGV( cnnq, qname, dbname, params );
     end
@@ -16,12 +16,12 @@ if exist(this_densepe_matname, 'file') ~= 2
     
     
     %depth information
-    this_db_matname = fullfile(params.data.dir, params.data.db.cutout.dir, [dbname, params.data.db.cutout.matformat]);
+    this_db_matname = fullfile(params.dataset.db.cutouts.dir, [dbname, params.dataset.db.cutout.matformat]);
     load(this_db_matname, 'XYZcut');
     %load transformation matrix (local to global)
     this_floorid = strsplit(dbname, '/');this_floorid = this_floorid{1};
     info = parse_WUSTL_cutoutname( dbname );
-    transformation_txtname = fullfile(params.data.dir, params.data.db.trans.dir, this_floorid, 'transformations', ...
+    transformation_txtname = fullfile(params.dataset.db.trans.dir, this_floorid, 'transformations', ...
                 sprintf('trans_%s.txt', info.scan_id));
     P = load_CIIRC_transformation(transformation_txtname);
     %Feature upsampling
@@ -30,10 +30,7 @@ if exist(this_densepe_matname, 'file') ~= 2
     tent_xq2d = at_featureupsample(tent_xq2d,this_gvresults.cnnfeat1size,Iqsize);
     tent_xdb2d = at_featureupsample(tent_xdb2d,this_gvresults.cnnfeat2size,Idbsize);
     %query ray
-    Kq = [params.data.q.fl, 0, Iqsize(2)/2.0; ...
-        0, params.data.q.fl, Iqsize(1)/2.0; ...
-        0, 0, 1];
-    tent_ray2d = Kq^-1 * [tent_xq2d; ones(1, size(tent_xq2d, 2))];
+    tent_ray2d = params.camera.K^-1 * [tent_xq2d; ones(1, size(tent_xq2d, 2))];
     %DB 3d points
     indx = sub2ind(size(XYZcut(:,:,1)),tent_xdb2d(2,:),tent_xdb2d(1,:));
     X = XYZcut(:,:,1);Y = XYZcut(:,:,2);Z = XYZcut(:,:,3);
@@ -76,8 +73,8 @@ if exist(this_densepe_matname, 'file') ~= 2
 %      inlierPath = '/Volumes/GoogleDrive/Můj disk/ARTwin/InLocCIIRC_dataset/outputs/PnP_dense_inlier/1.jpg/cutout_B-315_3 -120 0.pnp_dense_inlier.mat';
 %      inlierPath = '/Volumes/Elements/backup/1-4-2020/InLocCIIRC_dataset/outputs/PnP_dense_inlier/1.jpg/cutout_1_-60_0.pnp_dense_inlier.mat';
 %      load(inlierPath, 'P', 'inls', 'tentatives_2d', 'tentatives_3d');
-%      Iq = imread(fullfile(params.data.dir, params.data.q.dir, qname));
-%      Idb = imread(fullfile(params.data.dir, params.data.db.cutout.dir, dbname));
+%      Iq = imread(fullfile(params.dataset.query.dir, qname));
+%      Idb = imread(fullfile(params.dataset.db.cutouts.dir, dbname));
 %      points.x2 = tentatives_2d(3, inls);
 %      points.y2 = tentatives_2d(4, inls);
 %      points.x1 = tentatives_2d(1, inls);

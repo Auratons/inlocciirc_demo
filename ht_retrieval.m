@@ -2,12 +2,9 @@
 
 %% Load query and database list
 query_dir = fullfile(params.data.dir, params.data.q.dir);
-load(params.input.qlist_matname, 'query_imgnames_all');
+load(params.input.qlist.path);
 db_dir = fullfile(params.data.dir, params.data.db.cutout.dir);
-load(params.input.dblist_matname, 'cutout_imgnames_all');
-
-params.data.db.cutout.size = size(imread(fullfile(db_dir, cutout_imgnames_all{1})));
-params.data.db.cutout.size = [params.data.db.cutout.size(2), params.data.db.cutout.size(1)]; % width, height
+load(params.input.dblist.path);
 
 %% top100 retrieval
 shortlist_topN = 100;
