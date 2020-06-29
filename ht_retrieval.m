@@ -1,9 +1,7 @@
 %Note: It loads localization score and output top100 database list for each query. 
 
 %% Load query and database list
-query_dir = fullfile(params.data.dir, params.data.q.dir);
 load(params.input.qlist.path);
-db_dir = fullfile(params.data.dir, params.data.db.cutout.dir);
 load(params.input.dblist.path);
 
 %% top100 retrieval

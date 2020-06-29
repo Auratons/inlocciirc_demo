@@ -50,7 +50,7 @@ if exist(densePV_matname, 'file') ~= 2
         
         %compute synthesized images and similarity scores
         parfor jj = 1:1:length(this_qlist)
-            P = load_CIIRC_transformation(fullfile(params.dataset.dir, params.data.db.trans.dir, this_dbscantrans{jj}));
+            P = load_CIIRC_transformation(fullfile(params.dataset.db.trans.dir, this_dbscantrans{jj}));
             parfor_densePV( this_qlist{jj}, this_dblist{jj}, this_Plist{jj} * P, params );
             fprintf('densePV: %d / %d done. \n', jj, length(this_qlist));
         end

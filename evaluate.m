@@ -1,5 +1,5 @@
 %% initialization
-load(params.input.qlist_matname, 'query_imgnames_all');
+load(params.input.qlist.path);
 densePV_matname = fullfile(params.output.dir, 'densePV_top10_shortlist.mat');
 load(densePV_matname, 'ImgList');
 

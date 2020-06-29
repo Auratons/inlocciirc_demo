@@ -46,6 +46,11 @@ if exist(densePE_matname, 'file') ~= 2
             end
         end
     end
+
+    inloc_hw = getenv("INLOC_HW");
+    if strcmp(inloc_hw, "GPU")
+        exit(0);
+    end
     
     %shortlist reranking
     ImgList = struct('queryname', {}, 'topNname', {}, 'topNscore', {}, 'P', {});
