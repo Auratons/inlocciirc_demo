@@ -1,5 +1,7 @@
 addpath('functions/InLocCIIRC_utils/params');
 addpath('functions/InLocCIIRC_utils/load_CIIRC_transformation');
+addpath('functions/InLocCIIRC_utils/mkdirIfNonExistent');
+addpath('functions/InLocCIIRC_utils/multiCameraPose');
 [ params ] = setupParams('holoLens1'); % NOTE: adjust
 
 startIdx = 127; % the index of the first query to be considered in the sequence
@@ -17,8 +19,10 @@ assert(size(descriptionsTable,1) == size(rawHoloLensPosesTable,1));
 nQueries = size(descriptionsTable,1);
 
 cameraPoseWrtHoloLensCS = zeros(nQueries,4,4);
+queryInd = zeros(nQueries,1);
 for i=1:nQueries
-    id = descriptionsTable{i, 'id'};
+    queryId = descriptionsTable{i, 'id'};
+    queryInd(i,:) = queryId;
     %space = descriptionsTable{i, 'space'}{1,1};
     %inMap = descriptionsTable{i, 'inMap'};
     t = [rawHoloLensPosesTable{i, 'Position_X'}; ...
@@ -46,6 +50,7 @@ for i=1:nQueries
     pose(1:3,4) = cameraPositionWrtHoloLensCS;
     cameraPoseWrtHoloLensCS(i,:,:) = pose;
 end
+queryInd = queryInd(startIdx:startIdx+k-1); % include only those in the sequence
 
 %% convert k HL poses to be wrt 1st HL camera pose CS
 cameraPoseWrtFirstCameraPose = zeros(k,4,4);
@@ -81,3 +86,18 @@ for i=startIdx:startIdx+k-1
     correspondences3D(j,:,:) = correspondences4D(1:3,:);
     j = j + 1;
 end
+
+%% execute and collect results
+%workingDir = tempname;
+workingDir = '/Volumes/GoogleDrive/Můj disk/ARTwin/InLocCIIRC_dataset/evaluation/sequences'; % only for debugging; TODO: remove
+
+inlierThreshold = 12.0; % TODO
+numLoSteps = 10; % TODO
+invertYZ = false; % TODO
+pointsCentered = false;
+undistortionNeeded = false; % TODO
+estimatedPoses = multiCameraPose(workingDir, queryInd, cameraPoseWrtFirstCameraPose, ...
+                                    correspondences2D, correspondences3D, ...
+                                    inlierThreshold, numLoSteps, ...
+                                    invertYZ, pointsCentered, undistortionNeeded, params); % wrt model
+mkdirIfNonExistent(params.evaluation.sequences.dir);
