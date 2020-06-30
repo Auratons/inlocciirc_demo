@@ -2,6 +2,8 @@ addpath('functions/InLocCIIRC_utils/params');
 addpath('functions/InLocCIIRC_utils/load_CIIRC_transformation');
 addpath('functions/InLocCIIRC_utils/mkdirIfNonExistent');
 addpath('functions/InLocCIIRC_utils/multiCameraPose');
+addpath('functions/InLocCIIRC_utils/projectPointCloud');
+addpath('functions/InLocCIIRC_utils/projectPointsUsingP');
 [ params ] = setupParams('holoLens1'); % NOTE: adjust
 
 startIdx = 127; % the index of the first query to be considered in the sequence
@@ -86,6 +88,24 @@ for i=startIdx:startIdx+k-1
     correspondences3D(j,:,:) = correspondences4D(1:3,:);
     j = j + 1;
 end
+
+%% verification of correspondences - it works
+%close all;
+%figure;
+%pointSize = 8.0;
+%outputSize = params.camera.sensor.size;
+%projectedPointCloud = projectPointCloud(params.pointCloud.path, params.camera.fl, retrievedR, ...
+%                                    retrievedT, params.camera.sensor.size, outputSize, pointSize, ...
+%                                    params.projectPointCloudPy.path); % TODO: use projectMesh instead, which can work in headless mode
+%image(projectedPointCloud);
+%axis image;
+%
+%hold on;
+%scatter(correspondences2D(1,:), correspondences2D(2,:), 40, 'r', 'filled');
+%reprojectedPts = projectPointsUsingP(squeeze(correspondences3D(end,:,:)), P);
+%scatter(reprojectedPts(1,:), reprojectedPts(2,:), 20, 'g', 'filled');
+%hold off;
+%set(gcf, 'Position', get(0, 'Screensize'));
 
 %% execute and collect results
 %workingDir = tempname;
