@@ -4,6 +4,7 @@ addpath('functions/InLocCIIRC_utils/mkdirIfNonExistent');
 addpath('functions/InLocCIIRC_utils/multiCameraPose');
 addpath('functions/InLocCIIRC_utils/projectPointCloud');
 addpath('functions/InLocCIIRC_utils/projectPointsUsingP');
+addpath('functions/InLocCIIRC_utils/rotationDistance');
 [ params ] = setupParams('holoLens1'); % NOTE: adjust
 
 startIdx = 127; % the index of the first query to be considered in the sequence
@@ -74,7 +75,7 @@ correspondences3D = zeros(k,3,4);
 
 j = 1;
 for i=startIdx:startIdx+k-1
-    queryId = descriptionsTable{i, 'id'};
+    queryId = queryInd(j);
     retrievedPosePath = fullfile(params.evaluation.retrieved.poses.dir, sprintf('%d.txt', queryId));
     retrievedPose = load_CIIRC_transformation(retrievedPosePath);
     retrievedT = -inv(retrievedPose(1:3,1:3))*retrievedPose(1:3,4); % wrt model
@@ -120,3 +121,43 @@ estimatedPoses = multiCameraPose(workingDir, queryInd, cameraPoseWrtHoloLensCS, 
                                     inlierThreshold, numLoSteps, ...
                                     invertYZ, pointsCentered, undistortionNeeded, params); % wrt model
 mkdirIfNonExistent(params.evaluation.sequences.dir);
+
+%% compare poses estimated by MultiCameraPose with reference poses
+%% quantitative results
+errors = struct();
+for i=1:k
+    queryId = queryInd(i);
+    queryPoseFilename = sprintf('%d.txt', queryId);
+    posePath = fullfile(params.dataset.query.dir, 'poses', queryPoseFilename);
+    referenceP = load_CIIRC_transformation(posePath);
+    referenceT = -inv(referenceP(1:3,1:3))*referenceP(1:3,4);
+    referenceR = referenceP(1:3,1:3);
+
+    estimatedT = estimatedPoses(i,1:3,4)';
+    estimatedR = squeeze(estimatedPoses(i,1:3,1:3));
+
+    errors(i).queryId = queryId;
+    errors(i).translation = norm(estimatedT - referenceT);
+    errors(i).orientation = rotationDistance(referenceR, estimatedR);
+end
+errorsTable = struct2table(errors);
+errors = table2struct(sortrows(errorsTable, 'queryId'));
+fprintf('id\ttranslation [m]\torientation [deg]\n');
+for i=1:k
+    fprintf('%d\t%0.2f\t%0.2f\n', errors(i).queryId, errors(i).translation, errors(i).orientation);
+end
+
+%% qualitative results
+close all;
+for i=1:k
+    figure;
+    pointSize = 8.0;
+    outputSize = params.camera.sensor.size;
+    estimatedT = estimatedPoses(i,1:3,4)';
+    estimatedR = squeeze(estimatedPoses(i,1:3,1:3));
+    projectedPointCloud = projectPointCloud(params.pointCloud.path, params.camera.fl, estimatedR, ...
+                                        estimatedT, params.camera.sensor.size, outputSize, pointSize, ...
+                                        params.projectPointCloudPy.path);
+    image(projectedPointCloud);
+    axis image;
+end
