@@ -41,11 +41,19 @@ for i=1:nQueries
 
     % camera points to -z in HoloLens
     % see https://docs.microsoft.com/en-us/windows/mixed-reality/coordinate-systems-in-directx
-    rFix = rotationMatrix([pi, 0.0, 0.0], 'ZYX');
-    R = rFix * R;
+    rFix = rotationMatrix([pi, 0.0, 0.0], 'ZYX'); % correct
+    %rFix = eye(3); % incorrect
+
+    %R = R';
+
+    R1 = (rFix * R)';
+    R2 = R' * rFix;
+    Rd = R1-R2;
+    eps = 1e-8;
+    assert(all(Rd(:) < eps));
 
     cameraPositionWrtHoloLensCS = t';
-    cameraOrientationWrtHoloLensCS = R';
+    cameraOrientationWrtHoloLensCS = R2;
 
     pose = eye(4);
     pose(1:3,1:3) = cameraOrientationWrtHoloLensCS;
@@ -53,15 +61,6 @@ for i=1:nQueries
     cameraPoseWrtHoloLensCS(i,:,:) = pose;
 end
 queryInd = queryInd(startIdx:startIdx+k-1); % include only those in the sequence
-
-%% convert k HL poses to be wrt 1st HL camera pose CS
-cameraPoseWrtFirstCameraPose = zeros(k,4,4);
-holoLensCSToFirstCameraPoseCS = inv(squeeze(cameraPoseWrtHoloLensCS(startIdx,:,:)));
-j = 1;
-for i=startIdx:startIdx+k-1
-    cameraPoseWrtFirstCameraPose(j,:,:) = holoLensCSToFirstCameraPoseCS * squeeze(cameraPoseWrtHoloLensCS(i,:,:));
-    j = j + 1;
-end
 
 %% set up 2D-3D correspondences for the k queries
 sensorSize = params.camera.sensor.size; % height, width
@@ -110,13 +109,13 @@ end
 %% execute and collect results
 %workingDir = tempname;
 workingDir = '/Volumes/GoogleDrive/Můj disk/ARTwin/InLocCIIRC_dataset/evaluation/sequences'; % only for debugging; TODO: remove
-
+    
 inlierThreshold = 12.0; % TODO
 numLoSteps = 10; % TODO
 invertYZ = false; % TODO
 pointsCentered = false;
 undistortionNeeded = false; % TODO
-estimatedPoses = multiCameraPose(workingDir, queryInd, cameraPoseWrtFirstCameraPose, ...
+estimatedPoses = multiCameraPose(workingDir, queryInd, cameraPoseWrtHoloLensCS, ...
                                     correspondences2D, correspondences3D, ...
                                     inlierThreshold, numLoSteps, ...
                                     invertYZ, pointsCentered, undistortionNeeded, params); % wrt model
