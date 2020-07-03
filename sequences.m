@@ -72,6 +72,8 @@ for i=1:k
     queryId = queryInd(i);
     orientationDataIdx = queryId+params.HoloLensOrientationDelay;
     translationDataIdx = queryId+params.HoloLensTranslationDelay;
+    %orientationDataIdx = queryId+4;
+    %translationDataIdx = queryId+6;
     %orientationDataIdx = queryId;
     %translationDataIdx = queryId;
     if (orientationDataIdx > nQueries || translationDataIdx > nQueries)
@@ -97,10 +99,24 @@ sensorSize = params.camera.sensor.size; % height, width
 imageWidth = sensorSize(2);
 imageHeight = sensorSize(1);
 correspondences2D = [imageWidth/4, imageHeight/4; ...
-                    imageWidth/4, imageHeight-imageHeight/4; ...
-                    imageWidth-imageWidth/4, imageHeight/4; ...
-                    imageWidth-imageWidth/4, imageHeight-imageHeight/4]';
-correspondences3D = zeros(k,3,4);
+                        imageWidth/4, imageHeight-imageHeight/4; ...
+                        imageWidth-imageWidth/4, imageHeight/4; ...
+                        imageWidth-imageWidth/4, imageHeight-imageHeight/4; ...
+                        imageWidth/3, imageHeight/3; ...
+                        imageWidth/3, imageHeight-imageHeight/3; ...
+                        imageWidth-imageWidth/3, imageHeight/3; ...
+                        imageWidth-imageWidth/3, imageHeight-imageHeight/3]';
+nMatchesPerQuery = size(correspondences2D,2);
+correspondences3D = zeros(k,3,nMatchesPerQuery);
+
+toDeproject = ones(4,nMatchesPerQuery);
+toDeproject(1:2,:) = correspondences2D;
+toDeproject(3,:) = 1.0 + rand(1,nMatchesPerQuery) * 2.0; % NOTE: optional
+
+normalized = toDeproject ./ toDeproject(3,:);
+for i=1:nMatchesPerQuery
+    correspondences2D(:,i) = normalized(1:2,i);
+end
 
 j = 1;
 for i=startIdx:startIdx+k-1
@@ -111,8 +127,6 @@ for i=startIdx:startIdx+k-1
     retrievedR = retrievedPose(1:3,1:3); % modelBasesToEpsilonBases
     P = [params.camera.K*retrievedR, -params.camera.K*retrievedR*retrievedT]; 
     imageToModel = inv([P; 0,0,0,1]);
-    toDeproject = ones(4,4);
-    toDeproject(1:2,:) = correspondences2D;
     correspondences4D = imageToModel * toDeproject;
     correspondences3D(j,:,:) = correspondences4D(1:3,:);
     j = j + 1;
