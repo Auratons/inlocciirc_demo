@@ -5,6 +5,8 @@ addpath('functions/InLocCIIRC_utils/multiCameraPose');
 addpath('functions/InLocCIIRC_utils/projectPointCloud');
 addpath('functions/InLocCIIRC_utils/projectPointsUsingP');
 addpath('functions/InLocCIIRC_utils/rotationDistance');
+addpath('functions/InLocCIIRC_utils/R_to_numpy_array');
+addpath('functions/InLocCIIRC_utils/T_to_numpy_array');
 [ params ] = setupParams('holoLens1'); % NOTE: adjust
 
 startIdx = 127; % the index of the first query to be considered in the sequence
@@ -81,6 +83,14 @@ for i=1:k
     cameraPosesWrtHoloLensCS2(i,:,:) = pose;
 end
 cameraPosesWrtHoloLensCS = cameraPosesWrtHoloLensCS2;
+
+%% debug - we need to print: origin of each camera wrt Omega, bases of each camera wrt Omega,
+for i=1:k
+    queryId = queryInd(i);
+    fprintf('query: %d\n', queryId);
+    fprintf('camera origin wrt Omega: %s\n', T_to_numpy_array(cameraPosesWrtHoloLensCS(i,1:3,4)));
+    fprintf('camera bases wrt Omega: %s\n', R_to_numpy_array(squeeze(cameraPosesWrtHoloLensCS(i,1:3,1:3))));
+end
 
 %% set up 2D-3D correspondences for the k queries
 sensorSize = params.camera.sensor.size; % height, width
