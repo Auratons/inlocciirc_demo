@@ -21,7 +21,7 @@ warning(prevWarningState);
 assert(size(descriptionsTable,1) == size(rawHoloLensPosesTable,1));
 nQueries = size(descriptionsTable,1);
 
-cameraPoseWrtHoloLensCS = zeros(nQueries,4,4);
+cameraPosesWrtHoloLensCS = zeros(nQueries,4,4);
 queryInd = zeros(nQueries,1);
 for i=1:nQueries
     queryId = descriptionsTable{i, 'id'};
@@ -59,9 +59,28 @@ for i=1:nQueries
     pose = eye(4);
     pose(1:3,1:3) = cameraOrientationWrtHoloLensCS;
     pose(1:3,4) = cameraPositionWrtHoloLensCS;
-    cameraPoseWrtHoloLensCS(i,:,:) = pose;
+    cameraPosesWrtHoloLensCS(i,:,:) = pose;
 end
-queryInd = queryInd(startIdx:startIdx+k-1); % include only those in the sequence
+
+%% include only those in the sequence
+queryInd = queryInd(startIdx:startIdx+k-1);
+cameraPosesWrtHoloLensCS2 = zeros(k,4,4); % accounted for (possible) delay
+% TODO: assert all query IDs are sorted and increasing by 1
+for i=1:k
+    queryId = queryInd(i);
+    orientationDataIdx = queryId+params.HoloLensOrientationDelay;
+    translationDataIdx = queryId+params.HoloLensTranslationDelay;
+    %orientationDataIdx = queryId;
+    %translationDataIdx = queryId;
+    if (orientationDataIdx > nQueries || translationDataIdx > nQueries)
+        error('No HoloLens pose data for query %d', queryId);
+    end
+    pose = eye(4);
+    pose(1:3,1:3) = cameraPosesWrtHoloLensCS(orientationDataIdx,1:3,1:3);
+    pose(1:3,4) = cameraPosesWrtHoloLensCS(translationDataIdx,1:3,4);
+    cameraPosesWrtHoloLensCS2(i,:,:) = pose;
+end
+cameraPosesWrtHoloLensCS = cameraPosesWrtHoloLensCS2;
 
 %% set up 2D-3D correspondences for the k queries
 sensorSize = params.camera.sensor.size; % height, width
@@ -116,7 +135,7 @@ numLoSteps = 10; % TODO
 invertYZ = false; % TODO
 pointsCentered = false;
 undistortionNeeded = false; % TODO
-estimatedPoses = multiCameraPose(workingDir, queryInd, cameraPoseWrtHoloLensCS, ...
+estimatedPoses = multiCameraPose(workingDir, queryInd, cameraPosesWrtHoloLensCS, ...
                                     correspondences2D, correspondences3D, ...
                                     inlierThreshold, numLoSteps, ...
                                     invertYZ, pointsCentered, undistortionNeeded, params); % wrt model
@@ -146,6 +165,8 @@ fprintf('id\ttranslation [m]\torientation [deg]\n');
 for i=1:k
     fprintf('%d\t%0.2f\t%0.2f\n', errors(i).queryId, errors(i).translation, errors(i).orientation);
 end
+fprintf('Mean\t%0.2f\t%0.2f\n', mean([errors.translation]),  mean([errors.orientation]));
+return;
 
 %% qualitative results
 close all;
