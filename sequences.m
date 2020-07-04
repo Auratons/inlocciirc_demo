@@ -11,6 +11,7 @@ addpath('functions/InLocCIIRC_utils/T_to_numpy_array');
 
 startIdx = 127; % the index of the first query to be considered in the sequence
 k = 5; % the length of the sequence
+matchesFromReferencePoses = true; % NOTE: must be false in production
 
 %% extract HoloLens poses wrt initial unknown HoloLens CS
 descriptionsTable = readtable(params.queryDescriptions.path); % decribes the reference poses
@@ -121,7 +122,11 @@ end
 j = 1;
 for i=startIdx:startIdx+k-1
     queryId = queryInd(j);
-    retrievedPosePath = fullfile(params.evaluation.retrieved.poses.dir, sprintf('%d.txt', queryId));
+    if matchesFromReferencePoses
+        retrievedPosePath = fullfile(params.poses.dir, sprintf('%d.txt', queryId));
+    else
+        retrievedPosePath = fullfile(params.evaluation.retrieved.poses.dir, sprintf('%d.txt', queryId));
+    end
     retrievedPose = load_CIIRC_transformation(retrievedPosePath);
     retrievedT = -inv(retrievedPose(1:3,1:3))*retrievedPose(1:3,4); % wrt model
     retrievedR = retrievedPose(1:3,1:3); % modelBasesToEpsilonBases
