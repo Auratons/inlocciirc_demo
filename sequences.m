@@ -7,11 +7,12 @@ addpath('functions/InLocCIIRC_utils/projectPointsUsingP');
 addpath('functions/InLocCIIRC_utils/rotationDistance');
 addpath('functions/InLocCIIRC_utils/R_to_numpy_array');
 addpath('functions/InLocCIIRC_utils/T_to_numpy_array');
+addpath('functions/InLocCIIRC_utils/printErrors');
 [ params ] = setupParams('holoLens1'); % NOTE: adjust
 
 startIdx = 127; % the index of the first query to be considered in the sequence
 k = 5; % the length of the sequence
-matchesFromReferencePoses = true; % NOTE: must be false in production
+matchesFromReferencePoses = false; % NOTE: must be false in production
 
 %% extract HoloLens poses wrt initial unknown HoloLens CS
 descriptionsTable = readtable(params.queryDescriptions.path); % decribes the reference poses
@@ -172,6 +173,22 @@ mkdirIfNonExistent(params.evaluation.sequences.dir);
 
 %% compare poses estimated by MultiCameraPose with reference poses
 %% quantitative results
+originalErrorsTable = readtable(params.evaluation.errors.path);
+nQueries2 = size(originalErrorsTable,1);
+assert(nQueries == nQueries2);
+originalErrors = struct();
+for i=1:k
+    queryId = queryInd(i);
+    queryId2 = originalErrorsTable{queryId, 'id'};
+    assert(queryId == queryId2);
+    originalErrors(i).queryId = queryId;
+    originalErrors(i).translation = originalErrorsTable{queryId, 'translation'};
+    originalErrors(i).orientation = originalErrorsTable{queryId, 'orientation'};
+end
+fprintf('Original errors (InLocCIIRC poses wrt reference poses):\n');
+printErrors(originalErrors);
+fprintf('\n');
+
 errors = struct();
 for i=1:k
     queryId = queryInd(i);
@@ -188,13 +205,26 @@ for i=1:k
     errors(i).translation = norm(estimatedT - referenceT);
     errors(i).orientation = rotationDistance(referenceR, estimatedR);
 end
-errorsTable = struct2table(errors);
-errors = table2struct(sortrows(errorsTable, 'queryId'));
-fprintf('id\ttranslation [m]\torientation [deg]\n');
+fprintf('Errors (MultiCameraPoses poses wrt reference poses):\n');
+printErrors(errors);
+fprintf('\n');
+
+errorDiffs = struct();
 for i=1:k
-    fprintf('%d\t%0.2f\t%0.2f\n', errors(i).queryId, errors(i).translation, errors(i).orientation);
+    queryId = queryInd(i);
+    errorDiffs(i).queryId = queryId;
+    errorDiffs(i).translation = errors(i).translation - originalErrors(i).translation;
+    errorDiffs(i).orientation = errors(i).orientation - originalErrors(i).orientation;
 end
-fprintf('Mean\t%0.2f\t%0.2f\n', mean([errors.translation]),  mean([errors.orientation]));
+fprintf('Change from original errors (InLocCIIRC):\n');
+printErrors(errorDiffs);
+fprintf('\n');
+
+meanTranslationDiff = mean([errorDiffs.translation]);
+meanOrientationDiff = mean([errorDiffs.orientation]);
+if meanTranslationDiff > 0.0 || meanOrientationDiff > 0.0
+    warning('The new poses are not better!');
+end
 return;
 
 %% qualitative results
