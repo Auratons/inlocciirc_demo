@@ -16,6 +16,7 @@ addpath('functions/InLocCIIRC_utils/at_netvlad_function');
 addpath('functions/InLocCIIRC_utils/environment');
 addpath('functions/InLocCIIRC_utils/load_CIIRC_transformation');
 addpath('functions/InLocCIIRC_utils/params');
+addpath('functions/InLocCIIRC_utils/loadPoseFromInLocCIIRC_demo');
 
 env = environment();
 if strcmp(env, 'ciirc')
