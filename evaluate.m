@@ -202,7 +202,7 @@ end
 fprintf(summaryFile, ' -- OffMap\n');
 fprintf(summaryFile, '\nInLocCIIRC got completely lost %d out of %d times. (Not included in the mean errors)\n', ...
         inLocCIIRCLostCount, nQueries);
+fprintf(summaryFile, '\nErrors (InLocCIIRC poses wrt reference poses):\n');
+fprintf(summaryFile, fileread(params.evaluation.mean.errors.path));
 fclose(summaryFile);
 disp(fileread(params.evaluation.summary.path));
-fprintf('Errors (InLocCIIRC poses wrt reference poses):\n');
-disp(fileread(params.evaluation.mean.errors.path));
