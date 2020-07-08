@@ -133,7 +133,7 @@ for i=startIdx:startIdx+k-1
         j = j + 1;
     end
 end
-
+kPrev = size(queryInd,1);
 k = kWhitelisted;
 queryInd = queryInd2;
 
@@ -144,9 +144,9 @@ if k==0
     assert(false);
 end
 
-nBlacklistedQueriesInSequence = k-size(queryInd,1);
+nBlacklistedQueriesInSequence = kPrev-kWhitelisted;
 fprintf('You have blacklisted %0.0f%% queries in the sequence. %d queries remain.\n', ...
-        nBlacklistedQueriesInSequence*100/k, k-nBlacklistedQueriesInSequence);
+        nBlacklistedQueriesInSequence*100/kPrev, kPrev-nBlacklistedQueriesInSequence);
 
 %% include only those in the sequence
 cameraPosesWrtHoloLensCS2 = zeros(k,4,4); % accounted for (possible) delay

@@ -12,7 +12,7 @@ if exist(top100_matname, 'file') ~= 2
     ImgList = struct('queryname', {}, 'topNname', {}, 'topNscore', {});
     
     %Load score
-    load(params.input.score_matname, 'score');
+    load(params.input.scores.path, 'score');
     
     %shortlist format
     for ii = 1:1:size(score, 1)
