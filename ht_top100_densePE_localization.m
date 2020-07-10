@@ -25,22 +25,22 @@ if exist(densePE_matname, 'file') ~= 2
             cnn{2} = [];
             cnn{4} = [];
             [feat_path, ~, ~] = fileparts(q_densefeat_matname);
-            if exist(feat_path, 'dir')~=7; mkdir(feat_path); end;
+            if exist(feat_path, 'dir')~=7; mkdir(feat_path); end
             save('-v6', q_densefeat_matname, 'cnn');
             fprintf('Dense feature extraction: %s done. \n', ImgList_original(ii).queryname);
         end
         
         for jj = 1:1:shortlist_topN
-            db_densefeat_matname = fullfile(params.input.feature.dir, params.dataset.db.cutout.dir, ...
+            db_densefeat_matname = fullfile(params.input.feature.dir, params.dataset.db.cutout.dirname, ...
                 [ImgList_original(ii).topNname{jj}, params.input.feature.db_matformat]);
             if exist(db_densefeat_matname, 'file') ~= 2
-                cutoutImage = imread(fullfile(db_dir, ImgList_original(ii).topNname{jj}));
+                cutoutImage = imread(fullfile(params.dataset.db.cutouts.dir, ImgList_original(ii).topNname{jj}));
                 cnn = at_serialAllFeats_convfeat(net, cutoutImage, 'useGPU', true);
                 cnn{1} = [];
                 cnn{2} = [];
                 cnn{4} = [];
                 [feat_path, ~, ~] = fileparts(db_densefeat_matname);
-                if exist(feat_path, 'dir')~=7; mkdir(feat_path); end;
+                if exist(feat_path, 'dir')~=7; mkdir(feat_path); end
                 save('-v6', db_densefeat_matname, 'cnn');
                 fprintf('Dense feature extraction: %s done. \n', ImgList_original(ii).topNname{jj});
             end
@@ -53,6 +53,7 @@ if exist(densePE_matname, 'file') ~= 2
     end
     
     %shortlist reranking
+    % TODO: this thing should save its result, so that it doesnt have to be recomputed if executed again (e.g. so that one can easily debug parfor_densePE)
     ImgList = struct('queryname', {}, 'topNname', {}, 'topNscore', {}, 'P', {});
     for ii = 1:1:length(ImgList_original)
         ImgList(ii).queryname = ImgList_original(ii).queryname;
