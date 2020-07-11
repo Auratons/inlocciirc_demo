@@ -24,6 +24,7 @@ if exist(densePE_matname, 'file') ~= 2
             cnn{1} = [];
             cnn{2} = [];
             cnn{4} = [];
+            cnn{6} = [];
             [feat_path, ~, ~] = fileparts(q_densefeat_matname);
             if exist(feat_path, 'dir')~=7; mkdir(feat_path); end
             save('-v6', q_densefeat_matname, 'cnn');
@@ -39,6 +40,7 @@ if exist(densePE_matname, 'file') ~= 2
                 cnn{1} = [];
                 cnn{2} = [];
                 cnn{4} = [];
+                cnn{6} = [];
                 [feat_path, ~, ~] = fileparts(db_densefeat_matname);
                 if exist(feat_path, 'dir')~=7; mkdir(feat_path); end
                 save('-v6', db_densefeat_matname, 'cnn');
