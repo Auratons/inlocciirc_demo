@@ -7,7 +7,7 @@ this_densegv_matname = fullfile(params.output.gv_dense.dir, qname, buildCutoutNa
 if exist(this_densegv_matname, 'file') ~= 2
     
     %load input feature
-    dbfname = fullfile(params.input.feature.dir, params.dataset.db.cutout.dir, [dbname, params.input.feature.db_matformat]);
+    dbfname = fullfile(params.input.feature.dir, params.dataset.db.cutout.dirname, [dbname, params.input.feature.db_matformat]);
     cnndb = load(dbfname, 'cnn');cnndb = cnndb.cnn;
     
     %coarse-to-fine matching

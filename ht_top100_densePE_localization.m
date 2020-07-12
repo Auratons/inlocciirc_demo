@@ -18,7 +18,7 @@ if exist(densePE_matname, 'file') ~= 2
     for ii = 1:1:length(ImgList_original)
         q_densefeat_matname = fullfile(params.input.feature.dir, params.dataset.query.dirname, [ImgList_original(ii).queryname, params.input.feature.q_matformat]);
         if exist(q_densefeat_matname, 'file') ~= 2
-            queryImage = load_query_image_compatible_with_cutouts(fullfile(query_dir, ImgList_original(ii).queryname), ...
+            queryImage = load_query_image_compatible_with_cutouts(fullfile(params.dataset.query.dir, ImgList_original(ii).queryname), ...
                                                                         params.dataset.db.cutout.size);
             cnn = at_serialAllFeats_convfeat(net, queryImage, 'useGPU', true);
             cnn{1} = [];
@@ -55,7 +55,6 @@ if exist(densePE_matname, 'file') ~= 2
     end
     
     %shortlist reranking
-    % TODO: this thing should save its result, so that it doesnt have to be recomputed if executed again (e.g. so that one can easily debug parfor_densePE)
     ImgList = struct('queryname', {}, 'topNname', {}, 'topNscore', {}, 'P', {});
     for ii = 1:1:length(ImgList_original)
         ImgList(ii).queryname = ImgList_original(ii).queryname;

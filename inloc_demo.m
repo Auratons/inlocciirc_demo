@@ -11,6 +11,14 @@ if isempty(inloc_hw) || (~strcmp(inloc_hw, "GPU") && ~strcmp(inloc_hw, "CPU"))
 end
 fprintf('InLocCIIRC is running in %s mode.\n', inloc_hw);
 
+if strcmp(inloc_hw, "CPU") 
+    nWorkers = 45;
+    c = parcluster;
+    c.NumWorkers = nWorkers;
+    saveProfile(c);
+    p = parpool('local', nWorkers);
+end
+
 %1. retrieval
 ht_retrieval;
 
