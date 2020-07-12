@@ -3,7 +3,8 @@
 %candidate poses by using top10 database images. 
 
 shortlist_topN = 100;
-pnp_topN = 10;
+pnp_topN = 10; % TODO: rename?
+mCombinations = 10;
 
 %% densePE (top100 reranking -> top10 pose candidate)
 
@@ -61,13 +62,15 @@ if exist(densePE_matname, 'file') ~= 2
         ImgList(ii).topNname = ImgList_original(ii).topNname(1:shortlist_topN);
         
         %preload query feature
-        qfname = fullfile(params.input.feature.dir, params.dataset.query.dirname, [ImgList(ii).queryname, params.input.feature.q_matformat]);
-        cnnq = load(qfname, 'cnn');cnnq = cnnq.cnn;
+        % TODO: uncomment
+        %qfname = fullfile(params.input.feature.dir, params.dataset.query.dirname, [ImgList(ii).queryname, params.input.feature.q_matformat]);
+        %cnnq = load(qfname, 'cnn');cnnq = cnnq.cnn;
         
-        parfor kk = 1:1:shortlist_topN
-            parfor_denseGV( cnnq, ImgList(ii).queryname, ImgList(ii).topNname{kk}, params );
-            fprintf('dense matching: %s vs %s DONE. \n', ImgList(ii).queryname, ImgList(ii).topNname{kk});
-        end
+        % TODO: uncomment
+        %parfor kk = 1:1:shortlist_topN
+        %    parfor_denseGV( cnnq, ImgList(ii).queryname, ImgList(ii).topNname{kk}, params );
+        %    fprintf('dense matching: %s vs %s DONE. \n', ImgList(ii).queryname, ImgList(ii).topNname{kk});
+        %end
         
         for jj = 1:1:shortlist_topN
             cutoutPath = ImgList(ii).topNname{jj};
@@ -91,7 +94,64 @@ if exist(densePE_matname, 'file') ~= 2
             dblist{pnp_topN*(ii-1)+jj} = ImgList(ii).topNname{jj};
         end
     end
+
+    %% for each query, find top params.sequence.length sequences
+    % TODO: consider blacklists!
+    ImgListSequential = ImgList;
+
+    % build queryInd (i-th query in ImgList does not mean i-th query in the whole sequence)
+    queryInd = zeros(length(ImgList),1);
+    for i=1:length(ImgList)
+        queryIdx = ImgList(i).queryname;
+        queryIdx = strsplit(queryIdx, '.');
+        queryIdx = queryIdx{1};
+        queryIdx = str2num(queryIdx);
+        queryInd(i) = queryIdx;
+    end
+    [~,queryInd] = sort(queryInd);
+    % TODO: assert difference between neighbouring IDs is 1
+
+    for queryId=1:length(ImgList)
+        i = queryInd(queryId); % position of queryId in ImgList
+        % compute cumulative score for each combination
+
+        % generate all combination indices
+        if queryId-params.sequence.length+1 < 1
+            actualSequenceLength = queryId;
+        else
+            actualSequenceLength = params.sequence.length;
+        end
+        permInd = permn([1:pnp_topN], actualSequenceLength);
+
+        permScores = zeros(size(permInd,1),1);
+        for j=1:size(permInd)
+            score = 0.0;
+            permIndCol = 0;
+            for k=queryId-actualSequenceLength+1:queryId
+                permIndCol = permIndCol + 1;
+                cutoutIdx = permInd(j,permIndCol);
+                score = score + ImgList(k).topNscore(cutoutIdx);
+            end
+            permScores(j) = score;
+        end
+
+        % find indices of m sequences with the highest cumulative score
+        [sorted_score, idx] = sort(permScores, 'descend');
+        ImgListSequential(i).topNscore = sorted_score(idx(1:mCombinations))';
+
+        topInd = permInd(idx(1:mCombinations),:);
+        ImgListSequential(i).topNname = cell(actualSequenceLength,mCombinations);
+        for j=1:size(topInd,1)
+            permIndCol = 0;
+            for k=queryId-actualSequenceLength+1:queryId
+                permIndCol = permIndCol + 1;
+                name = ImgList(i).topNname{topInd(j,permIndCol)};
+                ImgListSequential(i).topNname{permIndCol,j} = name;
+            end
+        end
+    end
     
+    assert(false); % TODO: remove
     %dense pnp
     parfor ii = 1:1:length(qlist)
         parfor_densePE( qlist{ii}, dblist{ii}, params );
@@ -99,6 +159,8 @@ if exist(densePE_matname, 'file') ~= 2
     end
     
     %load top10 pnp
+    % TODO: since we have selected only top 10, we should remove the other (now unused) elements from densePE_top100_shortlist.mat
+    %       now it is confusing
     for ii = 1:1:length(ImgList)
         ImgList(ii).P = cell(1, pnp_topN);
         for jj = 1:1:pnp_topN
@@ -112,7 +174,7 @@ if exist(densePE_matname, 'file') ~= 2
     if exist(params.output.dir, 'dir') ~= 7
         mkdir(params.output.dir);
     end
-    save('-v6', densePE_matname, 'ImgList');
+    save('-v6', densePE_matname, 'ImgList'); % TODO: this list should only include pnp_topN items, because the rest are not valid!
 else
     load(densePE_matname, 'ImgList');
 end

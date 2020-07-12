@@ -3,7 +3,7 @@
 %candidates are then re-scored by the similarity.
 
 %% densePV (top10 pose candidate -> pose verification)
-PV_topN = 10;
+PV_topN = 10; % assuming this is not larger than pnp_topN
 densePV_matname = fullfile(params.output.dir, 'densePV_top10_shortlist.mat');
 if exist(densePV_matname, 'file') ~= 2
     

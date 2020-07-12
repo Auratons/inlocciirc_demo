@@ -6,6 +6,7 @@ addpath('functions/relja_matlab');
 addpath('functions/relja_matlab/matconvnet/');
 addpath('functions/netvlad/');
 addpath('functions/inpaint_nans');
+addpath('functions/permn');
 addpath('functions/InLocCIIRC_utils/projectMesh');
 addpath('functions/InLocCIIRC_utils/rotationMatrix');
 addpath('functions/InLocCIIRC_utils/buildCutoutName');
