@@ -41,6 +41,18 @@ if exist(densePV_matname, 'file') ~= 2
     end
     
     %compute synthesized views and similarity
+
+    % Because projectMesh in densePV requires up to 20 GB of RAM per one instance,
+    % we need to limit the number of workers
+    % TODO: optimize and leverage more workers
+    poolobj = gcp('nocreate');
+    delete(poolobj); % terminate any previous pool
+    nWorkers = 4;
+    c = parcluster;
+    c.NumWorkers = nWorkers;
+    saveProfile(c);
+    p = parpool('local', nWorkers);
+
     for ii = 1:1:length(dbscanlist_uniq)
         this_dbscan = dbscanlist_uniq{ii};
         this_dbscantrans = dbscantranslist_uniq{ii};
