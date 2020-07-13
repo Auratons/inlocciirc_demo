@@ -18,6 +18,8 @@ addpath('functions/InLocCIIRC_utils/environment');
 addpath('functions/InLocCIIRC_utils/load_CIIRC_transformation');
 addpath('functions/InLocCIIRC_utils/params');
 addpath('functions/InLocCIIRC_utils/loadPoseFromInLocCIIRC_demo');
+addpath('functions/InLocCIIRC_utils/multiCameraPose');
+addpath('functions/InLocCIIRC_utils/getPosesFromHoloLens');
 
 env = environment();
 if strcmp(env, 'ciirc')

@@ -1,9 +1,8 @@
 %Note: It first rerank top100 original shortlist (ImgList_original) in accordance
-%with the number of dense matching inliers. It then computes query
-%candidate poses by using top10 database images. 
+%with the number of dense matching inliers. TODO: and then?
 
 shortlist_topN = 100;
-pnp_topN = 10; % TODO: rename?
+topN_with_GV = 10;
 mCombinations = 10;
 
 %% densePE (top100 reranking -> top10 pose candidate)
@@ -56,21 +55,19 @@ if exist(densePE_matname, 'file') ~= 2
     end
     
     %shortlist reranking
-    ImgList = struct('queryname', {}, 'topNname', {}, 'topNscore', {}, 'P', {});
+    ImgList = struct('queryname', {}, 'topNname', {}, 'topNscore', {}, 'Ps', {});
     for ii = 1:1:length(ImgList_original)
         ImgList(ii).queryname = ImgList_original(ii).queryname;
         ImgList(ii).topNname = ImgList_original(ii).topNname(1:shortlist_topN);
         
         %preload query feature
-        % TODO: uncomment
-        %qfname = fullfile(params.input.feature.dir, params.dataset.query.dirname, [ImgList(ii).queryname, params.input.feature.q_matformat]);
-        %cnnq = load(qfname, 'cnn');cnnq = cnnq.cnn;
+        qfname = fullfile(params.input.feature.dir, params.dataset.query.dirname, [ImgList(ii).queryname, params.input.feature.q_matformat]);
+        cnnq = load(qfname, 'cnn');cnnq = cnnq.cnn;
         
-        % TODO: uncomment
-        %parfor kk = 1:1:shortlist_topN
-        %    parfor_denseGV( cnnq, ImgList(ii).queryname, ImgList(ii).topNname{kk}, params );
-        %    fprintf('dense matching: %s vs %s DONE. \n', ImgList(ii).queryname, ImgList(ii).topNname{kk});
-        %end
+        parfor kk = 1:1:shortlist_topN
+            parfor_denseGV( cnnq, ImgList(ii).queryname, ImgList(ii).topNname{kk}, params );
+            fprintf('dense matching: %s vs %s DONE. \n', ImgList(ii).queryname, ImgList(ii).topNname{kk});
+        end
         
         for jj = 1:1:shortlist_topN
             cutoutPath = ImgList(ii).topNname{jj};
@@ -85,18 +82,13 @@ if exist(densePE_matname, 'file') ~= 2
         fprintf('%s done. \n', ImgList(ii).queryname);
     end
     
-    %pnp list
-    qlist = cell(1, length(ImgList)*pnp_topN);
-    dblist = cell(1, length(ImgList)*pnp_topN);
-    for ii = 1:1:length(ImgList)
-        for jj = 1:1:pnp_topN
-            qlist{pnp_topN*(ii-1)+jj} = ImgList(ii).queryname;
-            dblist{pnp_topN*(ii-1)+jj} = ImgList(ii).topNname{jj};
-        end
+    %% for each query, find top-mCombinations sequences of lengths params.sequence.length
+    areQueriesFromHoloLensSequence = isfield(params, 'sequence') && isfield(params.sequence, 'length');
+    if ~areQueriesFromHoloLensSequence
+        desiredSequenceLength = 1;
+    else
+        desiredSequenceLength = params.sequence.length;
     end
-
-    %% for each query, find top params.sequence.length sequences
-    % TODO: consider blacklists!
     ImgListSequential = ImgList;
 
     % build queryInd (i-th query in ImgList does not mean i-th query in the whole sequence)
@@ -116,12 +108,12 @@ if exist(densePE_matname, 'file') ~= 2
         % compute cumulative score for each combination
 
         % generate all combination indices
-        if queryId-params.sequence.length+1 < 1
+        if queryId-desiredSequenceLength+1 < 1
             actualSequenceLength = queryId;
         else
-            actualSequenceLength = params.sequence.length;
+            actualSequenceLength = desiredSequenceLength;
         end
-        permInd = permn([1:pnp_topN], actualSequenceLength);
+        permInd = permn([1:topN_with_GV], actualSequenceLength);
 
         permScores = zeros(size(permInd,1),1);
         for j=1:size(permInd)
@@ -150,31 +142,60 @@ if exist(densePE_matname, 'file') ~= 2
             end
         end
     end
-    
-    assert(false); % TODO: remove
+
+    if areQueriesFromHoloLensSequence
+        posesFromHoloLens = getPosesFromHoloLens(params.HoloLensOrientationDelay, params.HoloLensTranslationDelay, params);
+        nQueries = length(ImgListSequential);
+        assert(size(posesFromHoloLens,1) == nQueries);
+    end
+
+    qlist = cell(1, length(ImgListSequential)*mCombinations);
+    dblist = cell(1, length(ImgListSequential)*mCombinations);
+    dbind = cell(1, length(ImgListSequential)*mCombinations);
+    posesFromHoloLensList = cell(1, length(ImgListSequential)*mCombinations);
+    firstQueryInd = cell(1, length(ImgListSequential)*mCombinations);
+    lastQueryInd = cell(1, length(ImgListSequential)*mCombinations);
+    for ii = 1:length(ImgListSequential)
+        lastQueryId = find(queryInd == ii); % the one for which we try to estimate pose
+        for jj = 1:mCombinations
+            idx = mCombinations*(ii-1)+jj;
+            qlist{idx} = ImgListSequential(ii).queryname;
+            dblist{idx} = ImgListSequential(ii).topNname(:,jj);
+            dbind{idx} = jj;
+            actualSequenceLength = size(ImgListSequential(ii).topNname, 1);
+            firstQueryId = lastQueryId - actualSequenceLength + 1;
+            if areQueriesFromHoloLensSequence
+                posesFromHoloLensList{idx} = posesFromHoloLens(firstQueryId:lastQueryId,:,:);
+            end
+            firstQueryInd{idx} = firstQueryId;
+            lastQueryInd{idx} = lastQueryId;
+        end
+    end
+
     %dense pnp
-    parfor ii = 1:1:length(qlist)
-        parfor_densePE( qlist{ii}, dblist{ii}, params );
-        fprintf('densePE: %s vs %s DONE. \n', qlist{ii}, dblist{ii});
+    parfor ii = 1:length(qlist)
+        parfor_densePE(qlist{ii}, dblist{ii}, dbind{ii}, posesFromHoloLensList{ii}, firstQueryInd{ii}, lastQueryInd{ii}, params);
+        fprintf('densePE: %s vs a cutout sequence DONE. \n', qlist{ii});
+        fprintf('%d/%d done.\n', ii, length(qlist));
     end
     
-    %load top10 pnp
-    % TODO: since we have selected only top 10, we should remove the other (now unused) elements from densePE_top100_shortlist.mat
-    %       now it is confusing
-    for ii = 1:1:length(ImgList)
-        ImgList(ii).P = cell(1, pnp_topN);
-        for jj = 1:1:pnp_topN
-            cutoutPath = ImgList(ii).topNname{jj};
-            this_densepe_matname = fullfile(params.output.pnp_dense_inlier.dir, ImgList(ii).queryname, buildCutoutName(cutoutPath, params.output.pnp_dense.matformat));
-            load(this_densepe_matname, 'P');
-            ImgList(ii).P{jj} = P;
+    %load top-mCombinations poses
+    for ii = 1:1:length(ImgListSequential)
+        ImgListSequential(ii).P = cell(1, topN_with_GV);
+        for jj = 1:1:mCombinations
+            cutoutPath = ImgListSequential(ii).topNname{jj};
+            this_densepe_matname = fullfile(params.output.pnp_dense_inlier.dir, ImgListSequential(ii).queryname, ...
+                                            sprintf('%d%s', jj, params.output.pnp_dense.matformat));
+            load(this_densepe_matname, 'Ps');
+            ImgListSequential(ii).Ps{jj} = Ps;
         end
     end
     
     if exist(params.output.dir, 'dir') ~= 7
         mkdir(params.output.dir);
     end
-    save('-v6', densePE_matname, 'ImgList'); % TODO: this list should only include pnp_topN items, because the rest are not valid!
+    ImgList = ImgListSequential;
+    save('-v6', densePE_matname, 'ImgList');
 else
     load(densePE_matname, 'ImgList');
 end

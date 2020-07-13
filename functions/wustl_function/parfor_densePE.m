@@ -1,71 +1,122 @@
-function parfor_densePE( qname, dbname, params )
+function parfor_densePE( qname, dbnames, dbnamesId, posesFromHoloLens, firstQueryId, lastQueryId, params )
+    % there are two exceptional situtations
+    % 1. the actual query length can be lower than params.sequence.length, if currect query is near the beginning of the overall sequence
+    %       -> just use the smaller sequence. if length is 1, use P3P
+    % 2. we don't have poses from HoloLens, for some of the queries by the end of the overall sequence. This is because of a delay
+    %       -> because the missing queries are coming from higher query Ids to smaller query Ids, and we are interested in the highest
+    %           query Id in the sequence, we cannot use MCP at all (I checked it). So I can only use P3P on the single query.
+    
+this_densepe_matname = fullfile(params.output.pnp_dense_inlier.dir, qname, sprintf('%d%s', dbnamesId, params.output.pnp_dense.matformat));
 
-this_densepe_matname = fullfile(params.output.pnp_dense_inlier.dir, qname, buildCutoutName(dbname, params.output.pnp_dense.matformat));
+sequenceLength = size(dbnames,1);
+
+useP3P = sequenceLength == 1 || any(isnan(posesFromHoloLens(:)));
+if useP3P
+    sequenceLength = 1;
+end
+
+allCorrespondences2D = cell(1,sequenceLength);
+allCorrespondences3D = cell(1,sequenceLength);
+allTentatives2D = cell(1,sequenceLength);
+allTentatives3D = cell(1,sequenceLength);
+allInls = cell(1,sequenceLength);
 
 if exist(this_densepe_matname, 'file') ~= 2
-    %geometric verification results
-    this_densegv_matname = fullfile(params.output.gv_dense.dir, qname, buildCutoutName(dbname, params.output.gv_dense.matformat));
-    if exist(this_densegv_matname, 'file') ~= 2
-        qfname = fullfile(params.input.feature.dir, params.dataset.query.dirname, [qname, params.input.feature.q_matformat]);
-        cnnq = load(qfname, 'cnn');cnnq = cnnq.cnn;
-        parfor_denseGV( cnnq, qname, dbname, params );
-    end
-    this_gvresults = load(this_densegv_matname);
-    tent_xq2d = this_gvresults.f1(:, this_gvresults.inls12(1, :));
-    tent_xdb2d = this_gvresults.f2(:, this_gvresults.inls12(2, :));
-    
-    
-    %depth information
-    this_db_matname = fullfile(params.dataset.db.cutouts.dir, [dbname, params.dataset.db.cutout.matformat]);
-    load(this_db_matname, 'XYZcut');
-    %load transformation matrix (local to global)
-    this_floorid = strsplit(dbname, '/');this_floorid = this_floorid{1};
-    info = parse_WUSTL_cutoutname( dbname );
-    transformation_txtname = fullfile(params.dataset.db.trans.dir, this_floorid, 'transformations', ...
-                sprintf('trans_%s.txt', info.scan_id));
-    P = load_CIIRC_transformation(transformation_txtname);
-    %Feature upsampling
-    Idbsize = size(XYZcut);
-    Iqsize = Idbsize; % we padded the queries to match cutout aspect ratio
-    tent_xq2d = at_featureupsample(tent_xq2d,this_gvresults.cnnfeat1size,Iqsize);
-    tent_xdb2d = at_featureupsample(tent_xdb2d,this_gvresults.cnnfeat2size,Idbsize);
-    %query ray
-    tent_ray2d = params.camera.K^-1 * [tent_xq2d; ones(1, size(tent_xq2d, 2))];
-    %DB 3d points
-    indx = sub2ind(size(XYZcut(:,:,1)),tent_xdb2d(2,:),tent_xdb2d(1,:));
-    X = XYZcut(:,:,1);Y = XYZcut(:,:,2);Z = XYZcut(:,:,3);
-    tent_xdb3d = [X(indx); Y(indx); Z(indx)];
-    tent_xdb3d = bsxfun(@plus, P(1:3, 1:3)*tent_xdb3d, P(1:3, 4));
-    %Select keypoint correspond to 3D
-    idx_3d = all(~isnan(tent_xdb3d), 1);
-    tent_xq2d = tent_xq2d(:, idx_3d);
-    tent_xdb2d = tent_xdb2d(:, idx_3d);
-    tent_ray2d = tent_ray2d(:, idx_3d);
-    tent_xdb3d = tent_xdb3d(:, idx_3d);
-    
-    
-    tentatives_2d = [tent_xq2d; tent_xdb2d];
-    tentatives_3d = [tent_ray2d; tent_xdb3d];
-    
-    
-    %solver
-    if size(tentatives_2d, 2) < 3
-        P = nan(3, 4);
-        inls = false(1, size(tentatives_2d, 2));
-    else
-        [ P, inls ] = ht_lo_ransac_p3p( tent_ray2d, tent_xdb3d, 1.0*pi/180);
-        if isempty(P)
-            P = nan(3, 4);
+    for i=1:sequenceLength
+        dbname = dbnames{i};
+        %geometric verification results
+        this_densegv_matname = fullfile(params.output.gv_dense.dir, qname, buildCutoutName(dbname, params.output.gv_dense.matformat));
+        if exist(this_densegv_matname, 'file') ~= 2
+            % TODO: possible race condition?
+            % this function is executed in parfor and two different workers may be working on the same dbname at a time
+            qfname = fullfile(params.input.feature.dir, params.dataset.query.dirname, [qname, params.input.feature.q_matformat]);
+            cnnq = load(qfname, 'cnn');cnnq = cnnq.cnn;
+            parfor_denseGV( cnnq, qname, dbname, params );
         end
+        this_gvresults = load(this_densegv_matname);
+        tent_xq2d = this_gvresults.f1(:, this_gvresults.inls12(1, :));
+        tent_xdb2d = this_gvresults.f2(:, this_gvresults.inls12(2, :));
+    
+        %depth information
+        this_db_matname = fullfile(params.dataset.db.cutouts.dir, [dbname, params.dataset.db.cutout.matformat]);
+        load(this_db_matname, 'XYZcut');
+        %load transformation matrix (local to global)
+        this_floorid = strsplit(dbname, '/');this_floorid = this_floorid{1};
+        info = parse_WUSTL_cutoutname( dbname );
+        transformation_txtname = fullfile(params.dataset.db.trans.dir, this_floorid, 'transformations', ...
+                    sprintf('trans_%s.txt', info.scan_id));
+        P = load_CIIRC_transformation(transformation_txtname);
+        %Feature upsampling
+        Idbsize = size(XYZcut);
+        Iqsize = Idbsize; % we padded the queries to match cutout aspect ratio
+        tent_xq2d = at_featureupsample(tent_xq2d,this_gvresults.cnnfeat1size,Iqsize);
+        tent_xdb2d = at_featureupsample(tent_xdb2d,this_gvresults.cnnfeat2size,Idbsize);
+        %query ray
+        tent_ray2d = params.camera.K^-1 * [tent_xq2d; ones(1, size(tent_xq2d, 2))];
+        %DB 3d points
+        indx = sub2ind(size(XYZcut(:,:,1)),tent_xdb2d(2,:),tent_xdb2d(1,:));
+        X = XYZcut(:,:,1);Y = XYZcut(:,:,2);Z = XYZcut(:,:,3);
+        tent_xdb3d = [X(indx); Y(indx); Z(indx)];
+        tent_xdb3d = bsxfun(@plus, P(1:3, 1:3)*tent_xdb3d, P(1:3, 4));
+        %Select keypoint correspond to 3D
+        idx_3d = all(~isnan(tent_xdb3d), 1);
+        tent_xq2d = tent_xq2d(:, idx_3d);
+        tent_xdb2d = tent_xdb2d(:, idx_3d);
+        tent_ray2d = tent_ray2d(:, idx_3d);
+        tent_xdb3d = tent_xdb3d(:, idx_3d);
+        allCorrespondences2D{i} = tent_xq2d;
+        allCorrespondences3D{i} = tent_xdb3d;
+
+        tentatives_2d = [tent_xq2d; tent_xdb2d];
+        tentatives_3d = [tent_ray2d; tent_xdb3d];
+        allTentatives2D{i} = tentatives_2d;
+        allTentatives3D{i} = tentatives_3d;
+        allInls{i} = ones(1,size(tentatives_2d,2));
     end
-    
-    
+
+    if useP3P
+        %solver
+        if size(tentatives_2d, 2) < 3
+            P = nan(3, 4);
+            inls = false(1, size(tentatives_2d, 2));
+        else
+            [ P, inls ] = ht_lo_ransac_p3p( tent_ray2d, tent_xdb3d, 1.0*pi/180);
+            if isempty(P)
+                P = nan(3, 4);
+            end
+        end
+        Ps{1} = P;
+        allInls{1} = inls;
+    else
+        %workingDir = tempname;
+        workingDir = '/Volumes/GoogleDrive/Můj disk/ARTwin/InLocCIIRC_dataset/evaluation/sequences'; % only for debugging;
+                                                                                                        % TODO: use better path;
+                                                                                                        % TODO: remove
+        inlierThreshold = 12.0; % TODO
+        numLoSteps = 10; % TODO; why is this parameter seem to have no effect (I tried 0, 1, 10, 100).
+                         % It is actualy correctly used in RansacLib: ransac.h:378...
+        invertYZ = false; % TODO
+        pointsCentered = false;
+        undistortionNeeded = false; % TODO
+        queryInd = [firstQueryId:lastQueryId]';
+        Ps = multiCameraPose(workingDir, queryInd, posesFromHoloLens, ...
+                                            allCorrespondences2D, allCorrespondences3D, ...
+                                            inlierThreshold, numLoSteps, ...
+                                            invertYZ, pointsCentered, undistortionNeeded, params); % wrt model
+    end
     
     if exist(fullfile(params.output.pnp_dense_inlier.dir, qname), 'dir') ~= 7
         mkdir(fullfile(params.output.pnp_dense_inlier.dir, qname));
     end
-    save('-v6', this_densepe_matname, 'P', 'inls', 'tentatives_2d', 'tentatives_3d');
+    % how to compute inls using MCP? The inls are not easily extractable from MCP, so don't do it for now.
+    % If I dont save inls, then queryPipeline will break. Yes, I could just
+    % use all tentative inliers there instead. But first, how are inls actually computed in p3p? inls in p3p is related to
+    % points which reproject with a high error (above cos(1 [deg])) - WTF??
+
+    % for now if a) p3p used -> use inls from p3p b) if MCP used, use ones
+    save('-v6', this_densepe_matname, 'Ps', 'allInls', 'allTentatives2D', 'allTentatives3D');
     
+    % UNMAINTAINED LEGACY CODE
 %      %% debug
 %      qname = '1.jpg';
 %      dbname = 'B-315/3/cutout_3_-120_0.jpg';
@@ -100,6 +151,4 @@ if exist(this_densepe_matname, 'file') ~= 2
 %      keyboard;    
 end
 
-
 end
-

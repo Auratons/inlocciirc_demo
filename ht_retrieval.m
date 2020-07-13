@@ -6,7 +6,6 @@ load(params.input.dblist.path);
 
 %% top100 retrieval
 shortlist_topN = 100;
-pnp_topN = 10;
 top100_matname = fullfile(params.output.dir, 'original_top100_shortlist.mat');
 if exist(top100_matname, 'file') ~= 2
     ImgList = struct('queryname', {}, 'topNname', {}, 'topNscore', {});
