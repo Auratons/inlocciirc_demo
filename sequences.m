@@ -282,8 +282,9 @@ for i=1:k
     referenceT = -inv(referenceP(1:3,1:3))*referenceP(1:3,4);
     referenceR = referenceP(1:3,1:3);
 
-    estimatedT = estimatedPoses(i,1:3,4)';
-    estimatedR = squeeze(estimatedPoses(i,1:3,1:3));
+    estimatedPose = estimatedPoses{i};
+    estimatedT = estimatedPose(1:3,4)';
+    estimatedR = squeeze(estimatedPose(1:3,1:3));
 
     errors(i).queryId = queryId;
     errors(i).translation = norm(estimatedT - referenceT);
@@ -317,8 +318,9 @@ for i=1:k
     figure;
     pointSize = 8.0;
     outputSize = params.camera.sensor.size;
-    estimatedT = estimatedPoses(i,1:3,4)';
-    estimatedR = squeeze(estimatedPoses(i,1:3,1:3));
+    estimatedPose = estimatedPoses{i};
+    estimatedT = estimatedPose(1:3,4)';
+    estimatedR = squeeze(estimatedPose(1:3,1:3));
     projectedPointCloud = projectPointCloud(params.pointCloud.path, params.camera.fl, estimatedR, ...
                                         estimatedT, params.camera.sensor.size, outputSize, pointSize, ...
                                         params.projectPointCloudPy.path);

@@ -174,6 +174,7 @@ if exist(densePE_matname, 'file') ~= 2
 
     %dense pnp
     parfor ii = 1:length(qlist)
+    %for ii = 1:length(qlist)
         parfor_densePE(qlist{ii}, dblist{ii}, dbind{ii}, posesFromHoloLensList{ii}, firstQueryInd{ii}, lastQueryInd{ii}, params);
         fprintf('densePE: %s vs a cutout sequence DONE. \n', qlist{ii});
         fprintf('%d/%d done.\n', ii, length(qlist));
@@ -181,9 +182,8 @@ if exist(densePE_matname, 'file') ~= 2
     
     %load top-mCombinations poses
     for ii = 1:1:length(ImgListSequential)
-        ImgListSequential(ii).P = cell(1, topN_with_GV);
+        ImgListSequential(ii).Ps = cell(1, mCombinations);
         for jj = 1:1:mCombinations
-            cutoutPath = ImgListSequential(ii).topNname{jj};
             this_densepe_matname = fullfile(params.output.pnp_dense_inlier.dir, ImgListSequential(ii).queryname, ...
                                             sprintf('%d%s', jj, params.output.pnp_dense.matformat));
             load(this_densepe_matname, 'Ps');

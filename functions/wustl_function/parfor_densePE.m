@@ -9,9 +9,11 @@ function parfor_densePE( qname, dbnames, dbnamesId, posesFromHoloLens, firstQuer
 this_densepe_matname = fullfile(params.output.pnp_dense_inlier.dir, qname, sprintf('%d%s', dbnamesId, params.output.pnp_dense.matformat));
 
 sequenceLength = size(dbnames,1);
+ind = 1:sequenceLength;
 
 useP3P = sequenceLength == 1 || any(isnan(posesFromHoloLens(:)));
 if useP3P
+    ind = [sequenceLength];
     sequenceLength = 1;
 end
 
@@ -22,7 +24,8 @@ allTentatives3D = cell(1,sequenceLength);
 allInls = cell(1,sequenceLength);
 
 if exist(this_densepe_matname, 'file') ~= 2
-    for i=1:sequenceLength
+    for j=1:sequenceLength
+        i = ind(j);
         dbname = dbnames{i};
         %geometric verification results
         this_densegv_matname = fullfile(params.output.gv_dense.dir, qname, buildCutoutName(dbname, params.output.gv_dense.matformat));
@@ -72,6 +75,15 @@ if exist(this_densepe_matname, 'file') ~= 2
         allTentatives2D{i} = tentatives_2d;
         allTentatives3D{i} = tentatives_3d;
         allInls{i} = ones(1,size(tentatives_2d,2));
+
+        % TODO: perhaps this is unnecessarily too strict?
+        % it may be okay if some queries don't have correspondences, as long as it is not the last query
+        if size(tentatives_2d, 2) < 3 
+            useP3P = true;
+            ind = [sequenceLength];
+            sequenceLength = 1;
+            break;
+        end
     end
 
     if useP3P
@@ -88,10 +100,10 @@ if exist(this_densepe_matname, 'file') ~= 2
         Ps{1} = P;
         allInls{1} = inls;
     else
-        %workingDir = tempname;
-        workingDir = '/Volumes/GoogleDrive/Můj disk/ARTwin/InLocCIIRC_dataset/evaluation/sequences'; % only for debugging;
-                                                                                                        % TODO: use better path;
-                                                                                                        % TODO: remove
+        workingDir = tempname;
+        %workingDir = '/Volumes/GoogleDrive/Můj disk/ARTwin/InLocCIIRC_dataset/evaluation/sequences'; % only for debugging;
+        %                                                                                                % TODO: use better path;
+        %                                                                                                % TODO: remove
         inlierThreshold = 12.0; % TODO
         numLoSteps = 10; % TODO; why is this parameter seem to have no effect (I tried 0, 1, 10, 100).
                          % It is actualy correctly used in RansacLib: ransac.h:378...
@@ -99,6 +111,7 @@ if exist(this_densepe_matname, 'file') ~= 2
         pointsCentered = false;
         undistortionNeeded = false; % TODO
         queryInd = [firstQueryId:lastQueryId]';
+
         Ps = multiCameraPose(workingDir, queryInd, posesFromHoloLens, ...
                                             allCorrespondences2D, allCorrespondences3D, ...
                                             inlierThreshold, numLoSteps, ...
