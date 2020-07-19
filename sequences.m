@@ -243,7 +243,8 @@ undistortionNeeded = false; % TODO
 estimatedPoses = multiCameraPose(workingDir, queryInd, cameraPosesWrtHoloLensCS, ...
                                     correspondences2D, correspondences3D, ...
                                     inlierThreshold, numLoSteps, ...
-                                    invertYZ, pointsCentered, undistortionNeeded, params); % wrt model
+                                    invertYZ, pointsCentered, undistortionNeeded,
+                                    imageWidth, imageHeight, params.camera.K, params); % wrt model
 mkdirIfNonExistent(params.evaluation.sequences.dir);
 
 %% compare poses estimated by MultiCameraPose with reference poses

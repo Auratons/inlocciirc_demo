@@ -26,18 +26,28 @@ if exist(this_densepe_matname, 'file') ~= 2
     P = load_CIIRC_transformation(transformation_txtname);
     %Feature upsampling
     Idbsize = size(XYZcut);
-    Iqsize = Idbsize; % we padded the queries to match cutout aspect ratio
+    Iqsize = Idbsize; % we padded the queries to match cutout aspect ratio (and rescaled to cutout dimensions)
     tent_xq2d = at_featureupsample(tent_xq2d,this_gvresults.cnnfeat1size,Iqsize);
     tent_xdb2d = at_featureupsample(tent_xdb2d,this_gvresults.cnnfeat2size,Idbsize);
     %query ray
-    tent_ray2d = params.camera.K^-1 * [tent_xq2d; ones(1, size(tent_xq2d, 2))];
+
+    originalQueryWidth = params.camera.sensor.size(2);
+    %originalQueryHeight = params.camera.sensor.size(1);
+    cutoutWidth = params.dataset.db.cutout.size(1);
+    cutoutHeight = params.dataset.db.cutout.size(2);
+    scale = cutoutWidth / originalQueryWidth;
+    paddedQueryWidth = originalQueryWidth;
+    paddedQueryHeight = cutoutHeight / scale;
+    K = buildK(params.camera.fl, paddedQueryWidth, paddedQueryHeight);
+
+    tent_ray2d = K^-1 * [tent_xq2d; ones(1, size(tent_xq2d, 2))];
     %DB 3d points
     indx = sub2ind(size(XYZcut(:,:,1)),tent_xdb2d(2,:),tent_xdb2d(1,:));
     X = XYZcut(:,:,1);Y = XYZcut(:,:,2);Z = XYZcut(:,:,3);
     tent_xdb3d = [X(indx); Y(indx); Z(indx)];
     tent_xdb3d = bsxfun(@plus, P(1:3, 1:3)*tent_xdb3d, P(1:3, 4));
     %Select keypoint correspond to 3D
-    idx_3d = all(~isnan(tent_xdb3d), 1);
+    idx_3d = all(~isnan(tent_xdb3d), 1); % this typically contains only ones
     tent_xq2d = tent_xq2d(:, idx_3d);
     tent_xdb2d = tent_xdb2d(:, idx_3d);
     tent_ray2d = tent_ray2d(:, idx_3d);

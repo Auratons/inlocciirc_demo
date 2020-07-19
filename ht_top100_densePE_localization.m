@@ -18,6 +18,7 @@ if exist(densePE_matname, 'file') ~= 2
     for ii = 1:1:length(ImgList_original)
         q_densefeat_matname = fullfile(params.input.feature.dir, params.dataset.query.dirname, [ImgList_original(ii).queryname, params.input.feature.q_matformat]);
         if exist(q_densefeat_matname, 'file') ~= 2
+            % this is necessary because of denseGV:
             queryImage = load_query_image_compatible_with_cutouts(fullfile(params.dataset.query.dir, ImgList_original(ii).queryname), ...
                                                                         params.dataset.db.cutout.size);
             cnn = at_serialAllFeats_convfeat(net, queryImage, 'useGPU', true);
@@ -94,6 +95,7 @@ if exist(densePE_matname, 'file') ~= 2
     
     %dense pnp
     parfor ii = 1:1:length(qlist)
+    %for ii = 1:1:length(qlist)
         parfor_densePE( qlist{ii}, dblist{ii}, params );
         fprintf('densePE: %s vs %s DONE. \n', qlist{ii}, dblist{ii});
     end

@@ -47,7 +47,11 @@ if exist(densePV_matname, 'file') ~= 2
     % TODO: optimize and leverage more workers
     poolobj = gcp('nocreate');
     delete(poolobj); % terminate any previous pool
-    nWorkers = 4;
+    if strcmp(environment(), "laptop")
+        nWorkers = 1;
+    else
+        nWorkers = 4;
+    end
     c = parcluster;
     c.NumWorkers = nWorkers;
     saveProfile(c);
