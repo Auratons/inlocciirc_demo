@@ -9,7 +9,7 @@ if exist(this_densePV_matname, 'file') ~= 2
         
         %load downsampled images
         Iq = imresize(imread(fullfile(params.dataset.query.dir, qname)), params.dataset.query.dslevel);
-        fl = params.dataset.query.fl * params.dataset.query.dslevel;
+        fl = params.camera.fl * params.dataset.query.dslevel;
         R = P(1:3,1:3);
         t = P(1:3,4);
 
