@@ -16,7 +16,9 @@ if exist(this_densegv_matname, 'file') ~= 2
     [match12,f1,f2,cnnfeat1,cnnfeat2] = at_coarse2fine_matching(cnnq,cnndb,coarselayerlevel,finelayerlevel);
     [inls12] = at_denseransac(f1,f2,match12,2);
     
-    
+    % TODO: possible race condition?
+    % this function is executed in parfor in ht_top100_densePE_localization and all the workers are working on the same query
+    % if that happens, though, mkdir is noop but it shows an error.
     if exist(fullfile(params.output.gv_dense.dir, qname), 'dir') ~= 7
         mkdir(fullfile(params.output.gv_dense.dir, qname));
     end

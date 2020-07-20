@@ -6,9 +6,13 @@ if exist(this_densepe_matname, 'file') ~= 2
     %geometric verification results
     this_densegv_matname = fullfile(params.output.gv_dense.dir, qname, buildCutoutName(dbname, params.output.gv_dense.matformat));
     if exist(this_densegv_matname, 'file') ~= 2
+        % TODO: possible race condition?
+        % this function is executed in parfor and two different workers may be working on the same dbname at a time
         qfname = fullfile(params.input.feature.dir, params.dataset.query.dirname, [qname, params.input.feature.q_matformat]);
         cnnq = load(qfname, 'cnn');cnnq = cnnq.cnn;
         parfor_denseGV( cnnq, qname, dbname, params );
+        warning('Executing parfor_denseGV within parfor_densePE. This is suspicious!');
+        assert(false);
     end
     this_gvresults = load(this_densegv_matname);
     tent_xq2d = this_gvresults.f1(:, this_gvresults.inls12(1, :));
@@ -27,6 +31,7 @@ if exist(this_densepe_matname, 'file') ~= 2
     %Feature upsampling
     Idbsize = size(XYZcut);
     Iqsize = Idbsize; % we padded the queries to match cutout aspect ratio (and rescaled to cutout dimensions)
+    % TODO: why are the next two lines necessary?
     tent_xq2d = at_featureupsample(tent_xq2d,this_gvresults.cnnfeat1size,Iqsize);
     tent_xdb2d = at_featureupsample(tent_xdb2d,this_gvresults.cnnfeat2size,Idbsize);
     %query ray
@@ -38,7 +43,8 @@ if exist(this_densepe_matname, 'file') ~= 2
     scale = cutoutWidth / originalQueryWidth;
     paddedQueryWidth = originalQueryWidth;
     paddedQueryHeight = cutoutHeight / scale;
-    K = buildK(params.camera.fl, paddedQueryWidth, paddedQueryHeight);
+    K = buildK(params.camera.fl, cutoutWidth, cutoutHeight); % TODO: if this works, the 3 lines above can be deleted
+        % TODO: why did this originally (in v1-Now3) worked with buildK(params.camera.fl, cutoutWidth, cutoutHeight)?
 
     tent_ray2d = K^-1 * [tent_xq2d; ones(1, size(tent_xq2d, 2))];
     %DB 3d points
@@ -71,6 +77,9 @@ if exist(this_densepe_matname, 'file') ~= 2
     
     
     
+    % TODO: possible race condition?
+    % this function is executed in parfor and two different workers may be working on the same qname at a time
+    % if that happens, though, mkdir is noop but it shows an error.
     if exist(fullfile(params.output.pnp_dense_inlier.dir, qname), 'dir') ~= 7
         mkdir(fullfile(params.output.pnp_dense_inlier.dir, qname));
     end
