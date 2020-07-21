@@ -7,6 +7,7 @@ RGBpersps = cell(1,sequenceLength);
 RGB_flags = cell(1,sequenceLength);
 scores = cell(1,sequenceLength);
 errmaps = cell(1,sequenceLength);
+firstQueryId = queryNameToQueryId(qname) - sequenceLength + 1;
 
 if exist(this_densePV_matname, 'file') ~= 2
     for i=1:sequenceLength
@@ -15,8 +16,9 @@ if exist(this_densePV_matname, 'file') ~= 2
         if all(~isnan(P(:)))
 
             %load downsampled images
-            Iq = imresize(imread(fullfile(params.dataset.query.dir, qname)), params.dataset.query.dslevel);
-            fl = params.dataset.query.fl * params.dataset.query.dslevel;
+            thisQueryName = sprintf('%d.jpg', firstQueryId + i - 1);
+            Iq = imresize(imread(fullfile(params.dataset.query.dir, thisQueryName)), params.dataset.query.dslevel);
+            fl = params.camera.fl * params.dataset.query.dslevel;
             R = P(1:3,1:3);
             t = P(1:3,4);
 

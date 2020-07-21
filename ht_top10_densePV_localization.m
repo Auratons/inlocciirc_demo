@@ -80,7 +80,7 @@ if exist(densePV_matname, 'file') ~= 2
                 P = load_CIIRC_transformation(fullfile(params.dataset.db.trans.dir, this_dbscantrans{jj}{k}));
                 actualPs{k} = this_PsList{jj}{k} * P;
             end
-            parfor_densePV( this_qlist{jj}, this_dblist{jj}, this_dbind{jj}, actualPs, params ); % TODO: input arguments
+            parfor_densePV( this_qlist{jj}, this_dblist{jj}, this_dbind{jj}, actualPs, params );
             fprintf('densePV: %d / %d done. \n', jj, length(this_qlist));
         end
         fprintf('densePV: scan %s (%d / %d) done. \n', this_dbscan, ii, length(dbscanlist_uniq));

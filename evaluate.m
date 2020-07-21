@@ -44,8 +44,15 @@ end
 nQueries = size(query_imgnames_all,2);
 whitelistedQueries = ones(1,nQueries);
 if isfield(params, 'blacklistedQueryInd')
+    blacklistedQueryNames = arrayfun(@(idx) sprintf('%d.jpg', idx), params.blacklistedQueryInd, 'UniformOutput', false);
     blacklistedQueries = false(1,nQueries);
-    blacklistedQueries(params.blacklistedQueryInd) = true;
+    for i=1:nQueries
+        queryName = blacklistedQueryNames{i};
+        idx = find(strcmp(queryName,query_imgnames_all));
+        if ~isempty(idx)
+            blacklistedQueries(idx) = true;
+        end
+    end
     nBlacklistedQueries = sum(blacklistedQueries);
     fprintf('Skipping %0.0f%% queries without reference poses. %d queries remain.\n', ...
                 nBlacklistedQueries*100/nQueries, nQueries-nBlacklistedQueries);
@@ -67,13 +74,13 @@ for i=1:nQueries
     referenceSpace = descriptionsRow.space{1,1};
 
     [P,T,R,spaceName] = loadPoseFromInLocCIIRC_demo(queryId, ImgList, params);
-    if ~strcmp(spaceName, referenceSpace) || ~whitelistedQueries(queryId)
+    if ~strcmp(spaceName, referenceSpace) || ~whitelistedQueries(i)
         T = nan(3,1);
         R = nan(3,3);
         P = nan(4,4);
     end
 
-    if any(isnan(P(:))) && whitelistedQueries(queryId)
+    if any(isnan(P(:))) && whitelistedQueries(i)
         inLocCIIRCLostCount = inLocCIIRCLostCount + 1;
     end
 

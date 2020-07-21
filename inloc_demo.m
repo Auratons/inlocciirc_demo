@@ -11,8 +11,13 @@ if isempty(inloc_hw) || (~strcmp(inloc_hw, "GPU") && ~strcmp(inloc_hw, "CPU"))
 end
 fprintf('InLocCIIRC is running in %s mode.\n', inloc_hw);
 
-if strcmp(inloc_hw, "CPU") && ~strcmp(environment(), "laptop") 
-    nWorkers = 45;
+delete(gcp('nocreate'));
+if strcmp(inloc_hw, "CPU")
+    if strcmp(environment(), 'laptop')
+        nWorkers = 8;
+    else
+        nWorkers = 45;
+    end
     c = parcluster;
     c.NumWorkers = nWorkers;
     saveProfile(c);

@@ -27,18 +27,23 @@ if exist(this_densepe_matname, 'file') ~= 2
     for j=1:sequenceLength
         i = ind(j);
         dbname = dbnames{i};
+        thisQueryName = sprintf('%d.jpg', firstQueryId + j - 1);
         %geometric verification results
-        this_densegv_matname = fullfile(params.output.gv_dense.dir, qname, buildCutoutName(dbname, params.output.gv_dense.matformat));
+        this_densegv_matname = fullfile(params.output.gv_dense.dir, thisQueryName, buildCutoutName(dbname, params.output.gv_dense.matformat));
         if exist(this_densegv_matname, 'file') ~= 2
             % TODO: possible race condition?
             % this function is executed in parfor and two different workers may be working on the same dbname at a time
-            qfname = fullfile(params.input.feature.dir, params.dataset.query.dirname, [qname, params.input.feature.q_matformat]);
+            qfname = fullfile(params.input.feature.dir, params.dataset.query.dirname, [thisQueryName, params.input.feature.q_matformat]);
             cnnq = load(qfname, 'cnn');cnnq = cnnq.cnn;
-            parfor_denseGV( cnnq, qname, dbname, params );
+            warning('Executing parfor_denseGV within parfor_densePE. This is suspicious!');
+            fprintf('this_densegv_matname: %s\n', this_densegv_matname);
+            assert(false);
+            parfor_denseGV( cnnq, thisQueryName, dbname, params );
         end
         this_gvresults = load(this_densegv_matname);
         tent_xq2d = this_gvresults.f1(:, this_gvresults.inls12(1, :));
         tent_xdb2d = this_gvresults.f2(:, this_gvresults.inls12(2, :));
+
     
         %depth information
         this_db_matname = fullfile(params.dataset.db.cutouts.dir, [dbname, params.dataset.db.cutout.matformat]);
@@ -51,18 +56,30 @@ if exist(this_densepe_matname, 'file') ~= 2
         P = load_CIIRC_transformation(transformation_txtname);
         %Feature upsampling
         Idbsize = size(XYZcut);
-        Iqsize = Idbsize; % we padded the queries to match cutout aspect ratio
+        Iqsize = Idbsize; % we padded the queries to match cutout aspect ratio (and rescaled to cutout dimensions
+        % TODO: why are the next two lines necessary
         tent_xq2d = at_featureupsample(tent_xq2d,this_gvresults.cnnfeat1size,Iqsize);
         tent_xdb2d = at_featureupsample(tent_xdb2d,this_gvresults.cnnfeat2size,Idbsize);
         %query ray
-        tent_ray2d = params.camera.K^-1 * [tent_xq2d; ones(1, size(tent_xq2d, 2))];
+        
+        originalQueryWidth = params.camera.sensor.size(2);
+        %originalQueryHeight = params.camera.sensor.size(1);
+        cutoutWidth = params.dataset.db.cutout.size(1);
+        cutoutHeight = params.dataset.db.cutout.size(2);
+        scale = cutoutWidth / originalQueryWidth;
+        paddedQueryWidth = originalQueryWidth;
+        paddedQueryHeight = cutoutHeight / scale;
+        K = buildK(params.camera.fl, cutoutWidth, cutoutHeight); % TODO: if this works, the 3 lines above can be deleted
+            % TODO: why did this originally (in v1-Now3) worked with buildK(params.camera.fl, cutoutWidth, cutoutHeight)?
+
+        tent_ray2d = K^-1 * [tent_xq2d; ones(1, size(tent_xq2d, 2))];
         %DB 3d points
         indx = sub2ind(size(XYZcut(:,:,1)),tent_xdb2d(2,:),tent_xdb2d(1,:));
         X = XYZcut(:,:,1);Y = XYZcut(:,:,2);Z = XYZcut(:,:,3);
         tent_xdb3d = [X(indx); Y(indx); Z(indx)];
         tent_xdb3d = bsxfun(@plus, P(1:3, 1:3)*tent_xdb3d, P(1:3, 4));
         %Select keypoint correspond to 3D
-        idx_3d = all(~isnan(tent_xdb3d), 1);
+        idx_3d = all(~isnan(tent_xdb3d), 1); % this typically contains only one
         tent_xq2d = tent_xq2d(:, idx_3d);
         tent_xdb2d = tent_xdb2d(:, idx_3d);
         tent_ray2d = tent_ray2d(:, idx_3d);
@@ -111,13 +128,21 @@ if exist(this_densepe_matname, 'file') ~= 2
         pointsCentered = false;
         undistortionNeeded = false; % TODO
         queryInd = [firstQueryId:lastQueryId]';
-
+        cutoutWidth = params.dataset.db.cutout.size(1);
+        cutoutHeight = params.dataset.db.cutout.size(2);
+        K = buildK(params.camera.fl, cutoutWidth, cutoutHeight);
         Ps = multiCameraPose(workingDir, queryInd, posesFromHoloLens, ...
                                             allCorrespondences2D, allCorrespondences3D, ...
                                             inlierThreshold, numLoSteps, ...
-                                            invertYZ, pointsCentered, undistortionNeeded, params); % wrt model
+                                            invertYZ, pointsCentered, undistortionNeeded, ...
+                                            cutoutWidth, cutoutHeight, K, ...
+                                            params); % wrt model
     end
     
+    
+    % TODO: possible race condition?
+    % this function is executed in parfor and two different workers may be working on the same qname at a time
+    % if that happens, though, mkdir is noop but it shows an error.
     if exist(fullfile(params.output.pnp_dense_inlier.dir, qname), 'dir') ~= 7
         mkdir(fullfile(params.output.pnp_dense_inlier.dir, qname));
     end

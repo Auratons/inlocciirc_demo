@@ -18,6 +18,7 @@ if exist(densePE_matname, 'file') ~= 2
     for ii = 1:1:length(ImgList_original)
         q_densefeat_matname = fullfile(params.input.feature.dir, params.dataset.query.dirname, [ImgList_original(ii).queryname, params.input.feature.q_matformat]);
         if exist(q_densefeat_matname, 'file') ~= 2
+            % this is necessary because of denseGV:
             queryImage = load_query_image_compatible_with_cutouts(fullfile(params.dataset.query.dir, ImgList_original(ii).queryname), ...
                                                                         params.dataset.db.cutout.size);
             cnn = at_serialAllFeats_convfeat(net, queryImage, 'useGPU', true);
@@ -55,10 +56,11 @@ if exist(densePE_matname, 'file') ~= 2
     end
     
     %shortlist reranking
-    ImgList = struct('queryname', {}, 'topNname', {}, 'topNscore', {}, 'Ps', {});
+    ImgList = struct('queryname', {}, 'topNname', {}, 'topNscore', {}, 'primary', {}, 'Ps', {});
     for ii = 1:1:length(ImgList_original)
         ImgList(ii).queryname = ImgList_original(ii).queryname;
         ImgList(ii).topNname = ImgList_original(ii).topNname(1:shortlist_topN);
+        ImgList(ii).primary = ImgList_original(ii).primary;
         
         %preload query feature
         qfname = fullfile(params.input.feature.dir, params.dataset.query.dirname, [ImgList(ii).queryname, params.input.feature.q_matformat]);
@@ -90,26 +92,24 @@ if exist(densePE_matname, 'file') ~= 2
         desiredSequenceLength = params.sequence.length;
     end
     ImgListSequential = ImgList;
+    ImgListSequential = ImgList(find([ImgList.primary] == true));
+    ImgListSequential = rmfield(ImgListSequential, 'primary');
 
     % build queryInd (i-th query in ImgList does not mean i-th query in the whole sequence)
     queryInd = zeros(length(ImgList),1);
     for i=1:length(ImgList)
-        queryIdx = ImgList(i).queryname;
-        queryIdx = strsplit(queryIdx, '.');
-        queryIdx = queryIdx{1};
-        queryIdx = str2num(queryIdx);
+        queryIdx = queryNameToQueryId(ImgList(i).queryname);
         queryInd(i) = queryIdx;
     end
-    [~,queryInd] = sort(queryInd);
-    % TODO: assert difference between neighbouring IDs is 1
 
-    for queryId=1:length(ImgList)
-        i = queryInd(queryId); % position of queryId in ImgList
+    for i=1:length(ImgListSequential)
+        parentQueryName = ImgListSequential(i).queryname;
+        parentQueryId = queryNameToQueryId(parentQueryName);
         % compute cumulative score for each combination
 
         % generate all combination indices
-        if queryId-desiredSequenceLength+1 < 1
-            actualSequenceLength = queryId;
+        if parentQueryId-desiredSequenceLength+1 < 1
+            actualSequenceLength = parentQueryId;
         else
             actualSequenceLength = desiredSequenceLength;
         end
@@ -119,33 +119,36 @@ if exist(densePE_matname, 'file') ~= 2
         for j=1:size(permInd)
             score = 0.0;
             permIndCol = 0;
-            for k=queryId-actualSequenceLength+1:queryId
+            for queryId=parentQueryId-actualSequenceLength+1:parentQueryId
                 permIndCol = permIndCol + 1;
                 cutoutIdx = permInd(j,permIndCol);
-                score = score + ImgList(k).topNscore(cutoutIdx);
+                ii = queryInd == queryId;
+                score = score + ImgList(ii).topNscore(cutoutIdx);
             end
             permScores(j) = score;
         end
 
         % find indices of m sequences with the highest cumulative score
         [sorted_score, idx] = sort(permScores, 'descend');
-        ImgListSequential(i).topNscore = sorted_score(idx(1:mCombinations))';
+        ImgListSequential(i).topNscore = sorted_score(1:mCombinations)';
 
         topInd = permInd(idx(1:mCombinations),:);
         ImgListSequential(i).topNname = cell(actualSequenceLength,mCombinations);
         for j=1:size(topInd,1)
             permIndCol = 0;
-            for k=queryId-actualSequenceLength+1:queryId
+            for queryId=parentQueryId-actualSequenceLength+1:parentQueryId
                 permIndCol = permIndCol + 1;
-                name = ImgList(i).topNname{topInd(j,permIndCol)};
+                ii = queryInd == queryId;
+                name = ImgList(ii).topNname{topInd(j,permIndCol)};
                 ImgListSequential(i).topNname{permIndCol,j} = name;
             end
         end
     end
 
     if areQueriesFromHoloLensSequence
-        posesFromHoloLens = getPosesFromHoloLens(params.HoloLensOrientationDelay, params.HoloLensTranslationDelay, params);
-        nQueries = length(ImgListSequential);
+        posesFromHoloLens = getPosesFromHoloLens(params.HoloLensOrientationDelay, params.HoloLensTranslationDelay, ...
+                                                    queryInd, params);
+        nQueries = length(ImgList);
         assert(size(posesFromHoloLens,1) == nQueries);
     end
 
@@ -156,7 +159,7 @@ if exist(densePE_matname, 'file') ~= 2
     firstQueryInd = cell(1, length(ImgListSequential)*mCombinations);
     lastQueryInd = cell(1, length(ImgListSequential)*mCombinations);
     for ii = 1:length(ImgListSequential)
-        lastQueryId = find(queryInd == ii); % the one for which we try to estimate pose
+        lastQueryId = queryNameToQueryId(ImgListSequential(ii).queryname); % the one for which we try to estimate pose
         for jj = 1:mCombinations
             idx = mCombinations*(ii-1)+jj;
             qlist{idx} = ImgListSequential(ii).queryname;
@@ -165,7 +168,13 @@ if exist(densePE_matname, 'file') ~= 2
             actualSequenceLength = size(ImgListSequential(ii).topNname, 1);
             firstQueryId = lastQueryId - actualSequenceLength + 1;
             if areQueriesFromHoloLensSequence
-                posesFromHoloLensList{idx} = posesFromHoloLens(firstQueryId:lastQueryId,:,:);
+                thisPosesFromHoloLens = zeros(actualSequenceLength,4,4);
+                k = 1;
+                for thisQueryId=firstQueryId:lastQueryId
+                    thisPosesFromHoloLens(k,:,:) = posesFromHoloLens(queryInd == thisQueryId,:,:);
+                    k = k + 1;
+                end
+                posesFromHoloLensList{idx} = thisPosesFromHoloLens;
             end
             firstQueryInd{idx} = firstQueryId;
             lastQueryInd{idx} = lastQueryId;
