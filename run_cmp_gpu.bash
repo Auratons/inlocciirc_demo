@@ -1,4 +1,5 @@
 #!/bin/bash
+bash nvidia-usage.sh
 nvidia-smi --query-gpu=index,name,utilization.memory --format=csv
 echo -n "Please select a GPU: "
 read GPU_ID
