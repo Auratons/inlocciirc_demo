@@ -87,7 +87,7 @@ if exist(densePV_matname, 'file') ~= 2
     end
     
     %load similarity score and reranking
-    ImgList = struct('queryname', {}, 'topNname', {}, 'topNscore', {}, 'Ps', {});
+    ImgList = struct('queryname', {}, 'topNname', {}, 'topNscore', {}, 'Ps', {}, 'dbnamesId', {});
     for ii = 1:1:length(ImgList_densePE)
         ImgList(ii).queryname = ImgList_densePE(ii).queryname;
         ImgList(ii).topNname = ImgList_densePE(ii).topNname(1:PV_topN);
@@ -95,6 +95,7 @@ if exist(densePV_matname, 'file') ~= 2
         ImgList(ii).Ps = ImgList_densePE(ii).Ps(1:PV_topN);
         for jj = 1:1:PV_topN
             dbnamesId = jj;
+            ImgList(ii).dbnamesId(jj) = dbnamesId;
             load(fullfile(params.output.synth.dir, ImgList(ii).queryname, sprintf('%d%s', dbnamesId, params.output.synth.matformat)), 'scores');
             cumulativeScore = sum(cell2mat(scores));
             ImgList(ii).topNscore(jj) = cumulativeScore;
@@ -105,6 +106,7 @@ if exist(densePV_matname, 'file') ~= 2
         ImgList(ii).topNname = ImgList(ii).topNname(idx);
         ImgList(ii).topNscore = ImgList(ii).topNscore(idx);
         ImgList(ii).Ps = ImgList(ii).Ps(idx);
+        ImgList(ii).dbnamesId = ImgList(ii).dbnamesId(idx);
     end
     
     if exist(params.output.dir, 'dir') ~= 7

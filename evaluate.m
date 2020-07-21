@@ -15,13 +15,13 @@ for i=1:size(query_imgnames_all,2)
     fun = @(x) strcmp(ImgList(x).queryname,queryName);
     tf = arrayfun(fun, 1:numel(ImgList));
     ImgListRecord = ImgList(find(tf));
-    cutoutPath = ImgListRecord.topNname{1};
-    synthPath = fullfile(params.output.synth.dir, queryName, buildCutoutName(cutoutPath, params.output.synth.matformat));
-    load(synthPath, 'RGBpersp');
+    dbnamesId = ImgListRecord.dbnamesId(1);
+    synthPath = fullfile(params.output.synth.dir, queryName, sprintf('%d%s', dbnamesId, params.output.synth.matformat));
+    load(synthPath, 'RGBpersps');
     numRows = size(queryImage,1);
     numCols = size(queryImage,2);
     
-    synthImage = RGBpersp;
+    synthImage = RGBpersps{end};
     if isempty(synthImage)
         synthImage = zeros(numRows, numCols, 3, 'uint8');
     else
