@@ -46,7 +46,8 @@ whitelistedQueries = ones(1,nQueries);
 if isfield(params, 'blacklistedQueryInd')
     blacklistedQueryNames = arrayfun(@(idx) sprintf('%d.jpg', idx), params.blacklistedQueryInd, 'UniformOutput', false);
     blacklistedQueries = false(1,nQueries);
-    for i=1:nQueries
+    nSuggestedBlacklistedQueries = length(params.blacklistedQueryInd);
+    for i=1:nSuggestedBlacklistedQueries
         queryName = blacklistedQueryNames{i};
         idx = find(strcmp(queryName,query_imgnames_all));
         if ~isempty(idx)
