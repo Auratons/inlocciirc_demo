@@ -1,9 +1,9 @@
 startup;
-[ params ] = setupParams('holoLens1'); % NOTE: adjust
+[ params ] = setupParams('holoLens1', true); % NOTE: adjust
 
 inloc_hw = getenv("INLOC_HW");
 if isempty(inloc_hw) || (~strcmp(inloc_hw, "GPU") && ~strcmp(inloc_hw, "CPU"))
-    fprintf('Please specify envrinment variable INLOC_HW to one of: "GPU", "CPU"\n');
+    fprintf('Please specify environment variable INLOC_HW to one of: "GPU", "CPU"\n');
     fprintf('CPU mode will run on many cores (unsuitable for boruvka).\n');
     fprintf('GPU mode will run on maximum of 4 cores, but with a GPU.\n');
     fprintf('NOTE: You should first run InLocCIIRC on GPU, then run it on CPU.\n')

@@ -231,8 +231,9 @@ end
 %set(gcf, 'Position', get(0, 'Screensize'));
 
 %% execute and collect results
-%workingDir = tempname;
-workingDir = '/Volumes/GoogleDrive/Můj disk/ARTwin/InLocCIIRC_dataset/evaluation/sequences'; % only for debugging; TODO: remove
+workingDir = tempname;
+%workingDir = '/Volumes/GoogleDrive/Můj disk/ARTwin/InLocCIIRC_dataset/evaluation/sequences'; % only for debugging; TODO: remove
+    % this does NOT support multiple experiments!
     
 inlierThreshold = 12.0; % TODO
 numLoSteps = 10; % TODO; why is this parameter seem to have no effect (I tried 0, 1, 10, 100).

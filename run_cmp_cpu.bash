@@ -1,7 +1,6 @@
 #!/bin/bash
-echo -n "Are you on cmpgrid-65? [yes/no]: "
-read PROCEED
-if [[ "$PROCEED" != "yes" ]]; then
+if [ "${HOSTNAME}" != "cmpgrid-65" ] && [ "${HOSTNAME}" != "cmpgrid-69" ] && [ "${HOSTNAME}" != "cmpgrid-71" ]; then
+    echo "You are not on the correct CPU node!"
     exit 0
 fi
 
@@ -20,4 +19,4 @@ if [[ "$PROCEED" != "yes" ]]; then
 fi
 
 rm -f run_cmp_cpu.output.txt
-qsub run_cmp_cpu_payload.sh
+qsub -v INLOC_EXPERIMENT_NAME="${INLOC_EXPERIMENT_NAME}" -q offline@${HOSTNAME} -o /mnt/datagrid/personal/lucivpav/InLocCIIRC_dataset/logs/InLocCIIRC_demo_cpu-"${INLOC_EXPERIMENT_NAME}".log run_cmp_cpu_payload.sh
