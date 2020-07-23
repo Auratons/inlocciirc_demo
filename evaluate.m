@@ -6,8 +6,10 @@ load(densePV_matname, 'ImgList');
 mkdirIfNonExistent(params.evaluation.dir);
 mkdirIfNonExistent(params.evaluation.retrieved.poses.dir);
 mkdirIfNonExistent(params.evaluation.query_vs_synth.dir);
+mkdirIfNonExistent(params.evaluation.query_segments_vs_synth_segments.dir);
 
-%% visual evaluation
+% TODO: this is an evaluation, we should show the high quality projections, not those used in densePV
+%% visual evaluation - query_vs_synth
 for i=1:size(query_imgnames_all,2)
     queryName = query_imgnames_all{i};
     queryImage = imread(fullfile(params.dataset.query.dir, queryName));
@@ -30,11 +32,44 @@ for i=1:size(query_imgnames_all,2)
 
     queryId = strsplit(queryName, '.');
     queryId = queryId{1};
-    imwrite(queryImage, fullfile(params.evaluation.query_vs_synth.dir, sprintf('%s-query.jpg', queryId)))
-    imwrite(synthImage, fullfile(params.evaluation.query_vs_synth.dir, sprintf('%s-synth.jpg', queryId)))
+    imwrite(queryImage, fullfile(params.evaluation.query_vs_synth.dir, sprintf('%s-query.jpg', queryId)));
+    imwrite(synthImage, fullfile(params.evaluation.query_vs_synth.dir, sprintf('%s-synth.jpg', queryId)));
 
     %imshowpair(queryImage, synthImage, 'montage');
     %saveas(gcf, fullfile(params.evaluation.query_vs_synth.dir, queryName));
+end
+
+% TODO: this is an evaluation, we should show the high quality projections, not those used in densePV
+%% visual evaluation - query_segments_vs_synth_segments
+for i=1:size(query_imgnames_all,2)
+    parentQueryName = query_imgnames_all{i};
+    parentQueryId = queryNameToQueryId(parentQueryName);
+    
+    fun = @(x) strcmp(ImgList(x).queryname,parentQueryName);
+    tf = arrayfun(fun, 1:numel(ImgList));
+    ImgListRecord = ImgList(find(tf));
+    dbnamesId = ImgListRecord.dbnamesId(1);
+    synthPath = fullfile(params.output.synth.dir, parentQueryName, sprintf('%d%s', dbnamesId, params.output.synth.matformat));
+    load(synthPath, 'RGBpersps');
+    thisOutputDir = fullfile(params.evaluation.query_segments_vs_synth_segments.dir, parentQueryName);
+    mkdirIfNonExistent(thisOutputDir);
+    k = length(RGBpersps);
+    for j=1:k
+        queryId = parentQueryId-k+j;
+        queryName = sprintf('%d.jpg', queryId);
+        queryImage = imread(fullfile(params.dataset.query.dir, queryName));
+        numRows = size(queryImage,1);
+        numCols = size(queryImage,2);
+        synthImage = RGBpersps{j};
+        if isempty(synthImage)
+            synthImage = zeros(numRows, numCols, 3, 'uint8');
+        else
+            synthImage = imresize(synthImage, [numRows numCols]);
+        end
+
+        imwrite(queryImage, fullfile(thisOutputDir, sprintf('%d-query.jpg', queryId)));
+        imwrite(synthImage, fullfile(thisOutputDir, sprintf('%d-synth.jpg', queryId)));
+    end
 end
 
 %% quantitative results
