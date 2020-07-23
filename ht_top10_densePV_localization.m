@@ -22,25 +22,26 @@ if exist(densePV_matname, 'file') ~= 2
     end
     %find unique scans
     dbscanlist = cell(size(dblist));
-    dbscantranslist = cell(size(dblist));
     for ii = 1:1:length(dblist)
+        actualPs = PsList{ii};
         for j=1:size(dblist{ii},1)
             dbpath = dblist{ii}{j};
             this_floorid = strsplit(dbpath, '/');this_floorid = this_floorid{1};
             info = parse_WUSTL_cutoutname(dbpath);
             dbscanlist{ii} = strcat(this_floorid, params.dataset.db.scan.matformat);
-            dbscantranslist{ii}{j} = fullfile(this_floorid, 'transformations', ['trans_', info.scan_id, '.txt']);
+            transPath = fullfile(params.dataset.db.trans.dir, this_floorid, ...
+                                                'transformations', ['trans_', info.scan_id, '.txt']);
+            P = load_CIIRC_transformation(transPath);
+            PsList{ii}{j} = actualPs{j} * P;
         end
     end
     [dbscanlist_uniq, sort_idx, uniq_idx] = unique(dbscanlist);
-    dbscantranslist_uniq = cell(size(dbscanlist_uniq));
     qlist_uniq = cell(size(dbscanlist_uniq));
     dblist_uniq = cell(size(dbscanlist_uniq));
     PsList_uniq = cell(size(dbscanlist_uniq));
     dbind_uniq = cell(size(dbscanlist_uniq));
     for ii = 1:1:length(dbscanlist_uniq)
         idx = uniq_idx == ii;
-        dbscantranslist_uniq{ii} = dbscantranslist(idx);
         qlist_uniq{ii} = qlist(idx);
         dblist_uniq{ii} = dblist(idx);
         PsList_uniq{ii} = PsList(idx);
@@ -66,7 +67,6 @@ if exist(densePV_matname, 'file') ~= 2
 
     for ii = 1:1:length(dbscanlist_uniq)
         this_dbscan = dbscanlist_uniq{ii};
-        this_dbscantrans = dbscantranslist_uniq{ii};
         this_qlist = qlist_uniq{ii};
         this_dblist = dblist_uniq{ii};
         this_PsList = PsList_uniq{ii};
@@ -75,12 +75,7 @@ if exist(densePV_matname, 'file') ~= 2
         %compute synthesized images and similarity scores
         parfor jj = 1:1:length(this_qlist)
         %for jj = 1:1:length(this_qlist)
-            actualPs = cell(1, size(this_dblist{jj},1));
-            for k=1:length(actualPs)
-                P = load_CIIRC_transformation(fullfile(params.dataset.db.trans.dir, this_dbscantrans{jj}{k}));
-                actualPs{k} = this_PsList{jj}{k} * P;
-            end
-            parfor_densePV( this_qlist{jj}, this_dblist{jj}, this_dbind{jj}, actualPs, params );
+            parfor_densePV( this_qlist{jj}, this_dblist{jj}, this_dbind{jj}, this_PsList{jj}, params );
             fprintf('densePV: %d / %d done. \n', jj, length(this_qlist));
         end
         fprintf('densePV: scan %s (%d / %d) done. \n', this_dbscan, ii, length(dbscanlist_uniq));
