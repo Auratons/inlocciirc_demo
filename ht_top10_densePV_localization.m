@@ -85,7 +85,7 @@ if exist(densePV_matname, 'file') ~= 2
     ImgList = struct('queryname', {}, 'topNname', {}, 'topNscore', {}, 'Ps', {}, 'dbnamesId', {});
     for ii = 1:1:length(ImgList_densePE)
         ImgList(ii).queryname = ImgList_densePE(ii).queryname;
-        ImgList(ii).topNname = ImgList_densePE(ii).topNname(1:PV_topN);
+        ImgList(ii).topNname = ImgList_densePE(ii).topNname(:,1:PV_topN);
         ImgList(ii).topNscore = zeros(1, PV_topN);
         ImgList(ii).Ps = ImgList_densePE(ii).Ps(1:PV_topN);
         for jj = 1:1:PV_topN
@@ -98,7 +98,7 @@ if exist(densePV_matname, 'file') ~= 2
         
         %reranking
         [sorted_score, idx] = sort(ImgList(ii).topNscore, 'descend');
-        ImgList(ii).topNname = ImgList(ii).topNname(idx);
+        ImgList(ii).topNname = ImgList(ii).topNname(:,idx);
         ImgList(ii).topNscore = ImgList(ii).topNscore(idx);
         ImgList(ii).Ps = ImgList(ii).Ps(idx);
         ImgList(ii).dbnamesId = ImgList(ii).dbnamesId(idx);
