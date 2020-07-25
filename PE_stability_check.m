@@ -1,5 +1,6 @@
 % run this to evaluate a certain segment on parfor_densePE once
 % the goal is to check how stable internally used MultiCameraPose is across multiple runs and on various segments
+% data used from previously run inloc_demo.m
 
 %% script inputs - adjust accordingly
 queryMode = 'holoLens1';

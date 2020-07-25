@@ -11,4 +11,4 @@ module load CUDA/9.0.176-GCC-6.4.0-2.28
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/datagrid/personal/lucivpav/gflags-2.2.2/build/lib:"${PWD}"/functions/vlfeat/toolbox/mex/mexa64
 export INLOC_HW="GPU"
 echo "TODO: why does running this require ~28 GB RAM?"
-cat startup.m inloc_demo.m | matlab -nodesktop -singleCompThread 2>&1 | tee /mnt/datagrid/personal/lucivpav/InLocCIIRC_dataset/logs/InLocCIIRC_demo_gpu-"${INLOC_EXPERIMENT_NAME}".log
+cat inloc_demo.m | matlab -nodesktop -singleCompThread 2>&1 | tee /mnt/datagrid/personal/lucivpav/InLocCIIRC_dataset/logs/inloc_demo_gpu-"${INLOC_EXPERIMENT_NAME}".log
