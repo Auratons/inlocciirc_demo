@@ -14,9 +14,7 @@ for i=1:size(query_imgnames_all,2)
     queryName = query_imgnames_all{i};
     queryImage = imread(fullfile(params.dataset.query.dir, queryName));
     
-    fun = @(x) strcmp(ImgList(x).queryname,queryName);
-    tf = arrayfun(fun, 1:numel(ImgList));
-    ImgListRecord = ImgList(find(tf));
+    ImgListRecord = ImgList(find(strcmp({ImgList.queryname}, queryName)));
     dbnamesId = ImgListRecord.dbnamesId(1);
     synthPath = fullfile(params.output.synth.dir, queryName, sprintf('%d%s', dbnamesId, params.output.synth.matformat));
     load(synthPath, 'RGBpersps');
@@ -45,9 +43,7 @@ for i=1:size(query_imgnames_all,2)
     parentQueryName = query_imgnames_all{i};
     parentQueryId = queryNameToQueryId(parentQueryName);
     
-    fun = @(x) strcmp(ImgList(x).queryname,parentQueryName);
-    tf = arrayfun(fun, 1:numel(ImgList));
-    ImgListRecord = ImgList(find(tf));
+    ImgListRecord = ImgList(find(strcmp({ImgList.queryname}, parentQueryName)));
     dbnamesId = ImgListRecord.dbnamesId(1);
     synthPath = fullfile(params.output.synth.dir, parentQueryName, sprintf('%d%s', dbnamesId, params.output.synth.matformat));
     load(synthPath, 'RGBpersps');

@@ -2,7 +2,7 @@
 %and compute similarity between original query and synthesized views. Pose
 %candidates are then re-scored by the similarity.
 
-PV_topN = 10; % assuming this is not larger than mCombinations
+PV_topN = params.PV.topN; % assuming this is not larger than mCombinations
 densePV_matname = fullfile(params.output.dir, 'densePV_top10_shortlist.mat');
 if exist(densePV_matname, 'file') ~= 2
     

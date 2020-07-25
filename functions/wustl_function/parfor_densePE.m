@@ -36,11 +36,11 @@ if exist(this_densepe_matname, 'file') ~= 2
             if exist(this_densegv_matname, 'file') ~= 2
                 % TODO: possible race condition?
                 % this function is executed in parfor and two different workers may be working on the same dbname at a time
-                qfname = fullfile(params.input.feature.dir, params.dataset.query.dirname, [thisQueryName, params.input.feature.q_matformat]);
-                cnnq = load(qfname, 'cnn');cnnq = cnnq.cnn;
                 warning('Executing parfor_denseGV within parfor_densePE. This is suspicious!');
                 fprintf('this_densegv_matname: %s\n', this_densegv_matname);
                 assert(false);
+                qfname = fullfile(params.input.feature.dir, params.dataset.query.dirname, [thisQueryName, params.input.feature.q_matformat]);
+                cnnq = load(qfname, 'cnn');cnnq = cnnq.cnn;
                 parfor_denseGV( cnnq, thisQueryName, dbname, params );
             end
             this_gvresults = load(this_densegv_matname);
