@@ -4,13 +4,13 @@
 %% script inputs - adjust accordingly
 queryMode = 'holoLens1';
 experimentName = 'HL1-v4-k5';
-segmentName = '200.jpg'; % the best choice from PV shortlist will be chosen
+segmentName = '250.jpg'; % the best choice from PV shortlist will be chosen
 
 %% initialize
 setenv("INLOC_EXPERIMENT_NAME", experimentName);
 startup;
 
-%% setup original and new params
+%% setup original and new params; clean previously generated data
 [ params ] = setupParams(queryMode, true);
 
 newExperimentName = sprintf('%s-PE_stability_check', experimentName);
@@ -18,6 +18,10 @@ setenv("INLOC_EXPERIMENT_NAME", newExperimentName);
 % this will trigger warning, if newParams.input.dblist.path does not exist
 [ newParams ] = setupParams(queryMode, true);
 setenv("INLOC_EXPERIMENT_NAME", experimentName);
+
+[~,~,~] = rmdir(newParams.input.dir, 's');
+[~,~,~] = rmdir(newParams.output.dir, 's');
+[~,~,~] = rmdir(newParams.evaluation.dir, 's');
 
 mkdirIfNonExistent(newParams.input.dir);
 copyfile(params.input.dblist.path, newParams.input.dblist.path);
@@ -56,7 +60,6 @@ for i=1:length(queryInd)
                                             buildCutoutName(dbname, newParams.output.gv_dense.matformat));
     copyfile(source_this_densegv_matname, target_this_densegv_matname);
 end
-rmdir(newParams.output.pnp_dense_inlier.dir, 's');
 parfor_densePE(qname, dbnames, dbnamesId, posesFromHoloLens, firstQueryId, lastQueryId, newParams);
 
 %% create shortlist PE, such that it contains segmentLength lines, representing single queries
@@ -75,12 +78,6 @@ end
 save('-v6', fullfile(newParams.output.dir, 'densePE_top100_shortlist.mat'), 'ImgList');
 
 %% parfor_densePV that chooses only top 1 from dense PE shortlist
-densePV_matname = fullfile(newParams.output.dir, 'densePV_top10_shortlist.mat');
-if exist(densePV_matname, 'file') == 2
-    delete(densePV_matname);
-end
-rmdir(newParams.output.synth.dir, 's');
-
 newParams.PV.topN = 1;
 paramsBak = params;
 params = newParams;
