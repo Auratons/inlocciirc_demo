@@ -1,5 +1,5 @@
-% run this to evaluate a certain segment on parfor_densePE once
-% the goal is to check how stable internally used MultiCameraPose is across multiple runs and on various segments
+% the goal of this script is to determine whether the quality of 2D-3D matches given to MCP when processing a segment is good enough
+% if P3P can handle the individual queries without a problem, it means the matches should be good enough
 % data used from previously run inloc_demo.m
 
 %% script inputs - adjust accordingly
@@ -14,7 +14,7 @@ startup;
 %% setup original and new params; clean previously generated data
 [ params ] = setupParams(queryMode, true);
 
-newExperimentName = sprintf('%s-PE_stability_check', experimentName);
+newExperimentName = sprintf('%s-P3P_vs_MCP', experimentName);
 setenv("INLOC_EXPERIMENT_NAME", newExperimentName);
 % this will trigger warning, if newParams.input.dblist.path does not exist
 [ newParams ] = setupParams(queryMode, true);
@@ -40,13 +40,14 @@ ImgListRecord = ImgList(strcmp({ImgList.queryname}, segmentName));
 qname = segmentName;
 parentQueryId = queryNameToQueryId(segmentName);
 dbnames = ImgListRecord.topNname(:,1);
-dbnamesId = ImgListRecord.dbnamesId(1);
+dbnamesId = ImgListRecord.dbnamesId(1); % dbnamesId can be basically arbitrary in this script
 segmentLength = size(ImgListRecord.topNname, 1);
 queryInd = zeros(segmentLength, 1);
 for i=1:segmentLength
     queryInd(i) = parentQueryId - segmentLength + i;
 end
 posesFromHoloLens = getPosesFromHoloLens(params.HoloLensOrientationDelay, params.HoloLensTranslationDelay, queryInd, params);
+    % not actually used
 firstQueryId = parentQueryId - segmentLength + 1;
 lastQueryId = parentQueryId;
 % we need to copy precomputed denseGV results
@@ -60,21 +61,21 @@ for i=1:length(queryInd)
     target_this_densegv_matname = fullfile(newParams.output.gv_dense.dir, thisQueryName, ...
                                             buildCutoutName(dbname, newParams.output.gv_dense.matformat));
     copyfile(source_this_densegv_matname, target_this_densegv_matname);
+    parfor_densePE(thisQueryName, {dbname}, dbnamesId, posesFromHoloLens, thisQueryId, thisQueryId, newParams);
 end
-parfor_densePE(qname, dbnames, dbnamesId, posesFromHoloLens, firstQueryId, lastQueryId, newParams);
 
 %% create shortlist PE, such that it contains segmentLength lines, representing single queries
 ImgList = struct('queryname', {}, 'topNname', {}, 'topNscore', {}, 'Ps', {});
-this_densepe_matname = fullfile(newParams.output.pnp_dense_inlier.dir, segmentName, ...
-                                    sprintf('%d%s', dbnamesId, newParams.output.pnp_dense.matformat));
-load(this_densepe_matname, 'Ps');
 for i=1:segmentLength
     thisQueryId = queryInd(i);
     thisQueryName = sprintf('%d.jpg', thisQueryId);
+    this_densepe_matname = fullfile(newParams.output.pnp_dense_inlier.dir, thisQueryName, ...
+                                        sprintf('%d%s', dbnamesId, newParams.output.pnp_dense.matformat));
+    load(this_densepe_matname, 'Ps');
     ImgList(i).queryname = thisQueryName;
     ImgList(i).topNname = dbnames(i);
     ImgList(i).topNscore = ones(1,1);
-    ImgList(i).Ps = {{Ps{i}}}; % this must be 1x1 cell array containing a 1x1 cell array containing 3x4 double (the P)
+    ImgList(i).Ps = {{Ps{1}}}; % this must be 1x1 cell array containing a 1x1 cell array containing 3x4 double (the P)
 end
 save('-v6', fullfile(newParams.output.dir, 'densePE_top100_shortlist.mat'), 'ImgList');
 
