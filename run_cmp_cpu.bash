@@ -7,7 +7,7 @@ if [ -z "$1" ]; then
 fi
 export SCRIPT_NAME="$1"
 
-if [ "${HOSTNAME}" != "cmpgrid-65" ] && [ "${HOSTNAME}" != "cmpgrid-69" ] && [ "${HOSTNAME}" != "cmpgrid-71" ]; then
+if [ "${HOSTNAME}" != "cmpgrid-65" ] && [ "${HOSTNAME}" != "cmpgrid-69" ] && [ "${HOSTNAME}" != "cmpgrid-71" ] && [ "${HOSTNAME}" != "cmpgrid-67" ] && [ "${HOSTNAME}" != "cmpgrid-68" ]; then
     echo "You are not on the correct CPU node!"
     exit 0
 fi

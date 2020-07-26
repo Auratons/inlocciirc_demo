@@ -39,32 +39,35 @@ end
 
 % TODO: this is an evaluation, we should show the high quality projections, not those used in densePV
 %% visual evaluation - query_segments_vs_synth_segments
-for i=1:size(query_imgnames_all,2)
-    parentQueryName = query_imgnames_all{i};
-    parentQueryId = queryNameToQueryId(parentQueryName);
-    
-    ImgListRecord = ImgList(find(strcmp({ImgList.queryname}, parentQueryName)));
-    dbnamesId = ImgListRecord.dbnamesId(1);
-    synthPath = fullfile(params.output.synth.dir, parentQueryName, sprintf('%d%s', dbnamesId, params.output.synth.matformat));
-    load(synthPath, 'RGBpersps');
-    thisOutputDir = fullfile(params.evaluation.query_segments_vs_synth_segments.dir, parentQueryName);
-    mkdirIfNonExistent(thisOutputDir);
-    k = length(RGBpersps);
-    for j=1:k
-        queryId = parentQueryId-k+j;
-        queryName = sprintf('%d.jpg', queryId);
-        queryImage = imread(fullfile(params.dataset.query.dir, queryName));
-        numRows = size(queryImage,1);
-        numCols = size(queryImage,2);
-        synthImage = RGBpersps{j};
-        if isempty(synthImage)
-            synthImage = zeros(numRows, numCols, 3, 'uint8');
-        else
-            synthImage = imresize(synthImage, [numRows numCols]);
-        end
+areQueriesFromHoloLensSequence = isfield(params, 'sequence') && isfield(params.sequence, 'length');
+if areQueriesFromHoloLensSequence
+    for i=1:size(query_imgnames_all,2)
+        parentQueryName = query_imgnames_all{i};
+        parentQueryId = queryNameToQueryId(parentQueryName);
 
-        imwrite(queryImage, fullfile(thisOutputDir, sprintf('%d-query.jpg', queryId)));
-        imwrite(synthImage, fullfile(thisOutputDir, sprintf('%d-synth.jpg', queryId)));
+        ImgListRecord = ImgList(find(strcmp({ImgList.queryname}, parentQueryName)));
+        dbnamesId = ImgListRecord.dbnamesId(1);
+        synthPath = fullfile(params.output.synth.dir, parentQueryName, sprintf('%d%s', dbnamesId, params.output.synth.matformat));
+        load(synthPath, 'RGBpersps');
+        thisOutputDir = fullfile(params.evaluation.query_segments_vs_synth_segments.dir, parentQueryName);
+        mkdirIfNonExistent(thisOutputDir);
+        k = length(RGBpersps);
+        for j=1:k
+            queryId = parentQueryId-k+j;
+            queryName = sprintf('%d.jpg', queryId);
+            queryImage = imread(fullfile(params.dataset.query.dir, queryName));
+            numRows = size(queryImage,1);
+            numCols = size(queryImage,2);
+            synthImage = RGBpersps{j};
+            if isempty(synthImage)
+                synthImage = zeros(numRows, numCols, 3, 'uint8');
+            else
+                synthImage = imresize(synthImage, [numRows numCols]);
+            end
+
+            imwrite(queryImage, fullfile(thisOutputDir, sprintf('%d-query.jpg', queryId)));
+            imwrite(synthImage, fullfile(thisOutputDir, sprintf('%d-synth.jpg', queryId)));
+        end
     end
 end
 
@@ -74,6 +77,8 @@ end
 % this would screw up the resulting statistics
 nQueries = size(query_imgnames_all,2);
 whitelistedQueries = ones(1,nQueries);
+blacklistedQueries = false(1,nQueries);
+nBlacklistedQueries = 0;
 if isfield(params, 'blacklistedQueryInd')
     blacklistedQueryNames = arrayfun(@(idx) sprintf('%d.jpg', idx), params.blacklistedQueryInd, 'UniformOutput', false);
     blacklistedQueries = false(1,nQueries);
