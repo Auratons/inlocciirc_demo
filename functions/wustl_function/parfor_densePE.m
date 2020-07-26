@@ -57,17 +57,24 @@ if exist(this_densepe_matname, 'file') ~= 2
             transformation_txtname = fullfile(params.dataset.db.trans.dir, this_floorid, 'transformations', ...
                         sprintf('trans_%s.txt', info.scan_id));
             P = load_CIIRC_transformation(transformation_txtname);
+
             %Feature upsampling
             Idbsize = size(XYZcut);
             Iqsize = Idbsize; % we padded the queries to match cutout aspect ratio (and rescaled to cutout dimensions
-            % TODO: why are the next two lines necessary
             tent_xq2d = at_featureupsample(tent_xq2d,this_gvresults.cnnfeat1size,Iqsize);
+                % without this, the features in query image would not match the cutout aspect ratio
             tent_xdb2d = at_featureupsample(tent_xdb2d,this_gvresults.cnnfeat2size,Idbsize);
+                % this may not be necessary
             %query ray
+            
+            % convert xq2d to match original query image
+            queryWidth = params.camera.sensor.size(2);
+            queryHeight = params.camera.sensor.size(1);
+            cutoutWidth = Idbsize(2);
+            cutoutHeight = Idbsize(1);
+            tent_xq2d = adjust_inliers_to_match_original_query(tent_xq2d, queryWidth, queryHeight, cutoutWidth, cutoutHeight);
 
-            cutoutWidth = params.dataset.db.cutout.size(1);
-            cutoutHeight = params.dataset.db.cutout.size(2);
-            K = buildK(params.camera.fl, cutoutWidth, cutoutHeight);
+            K = params.camera.K;
 
             tent_ray2d = K^-1 * [tent_xq2d; ones(1, size(tent_xq2d, 2))];
             %DB 3d points
