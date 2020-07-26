@@ -4,8 +4,8 @@
 
 %% script inputs - adjust accordingly
 queryMode = 'holoLens1';
-experimentName = 'HL1-v4-k3';
-segmentName = '200.jpg'; % the best choice from PV shortlist will be chosen
+experimentName = 'HL1-v4.2-k3';
+segmentName = '223.jpg'; % the best choice from PV shortlist will be chosen
 
 %% initialize
 setenv("INLOC_EXPERIMENT_NAME", experimentName);
