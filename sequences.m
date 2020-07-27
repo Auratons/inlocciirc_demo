@@ -246,6 +246,7 @@ estimatedPoses = multiCameraPose(workingDir, queryInd, cameraPosesWrtHoloLensCS,
                                     inlierThreshold, numLoSteps, ...
                                     invertYZ, pointsCentered, undistortionNeeded,
                                     imageWidth, imageHeight, params.camera.K, params); % wrt model
+rmdir(workingDir, 's');
 
 %% compare poses estimated by MultiCameraPose with reference poses
 %% quantitative results

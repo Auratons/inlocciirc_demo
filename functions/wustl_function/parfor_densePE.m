@@ -141,6 +141,7 @@ if exist(this_densepe_matname, 'file') ~= 2
                                                 invertYZ, pointsCentered, undistortionNeeded, ...
                                                 cutoutWidth, cutoutHeight, K, ...
                                                 params); % wrt model
+            rmdir(workingDir, 's');
         end
     end
     
