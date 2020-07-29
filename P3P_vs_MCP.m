@@ -1,11 +1,12 @@
 % the goal of this script is to determine whether the quality of 2D-3D matches given to MCP when processing a segment is good enough
 % if P3P can handle the individual queries without a problem, it means the matches should be good enough
 % data used from previously run inloc_demo.m
+% this script is processing individual queries in the segment using P3P
 
 %% script inputs - adjust accordingly
 queryMode = 'holoLens1';
-experimentName = 'HL1-v4-k3';
-segmentName = '200.jpg'; % the best choice from PV shortlist will be chosen
+experimentName = 'HL1-v4.2-k2';
+segmentName = '197.jpg'; % the best choice from PV shortlist will be chosen
 
 %% initialize
 setenv("INLOC_EXPERIMENT_NAME", experimentName);
@@ -41,7 +42,7 @@ qname = segmentName;
 parentQueryId = queryNameToQueryId(segmentName);
 dbnames = ImgListRecord.topNname(:,1);
 dbnamesId = ImgListRecord.dbnamesId(1); % dbnamesId can be basically arbitrary in this script
-segmentLength = size(ImgListRecord.topNname, 1);
+segmentLength = length(dbnames);
 queryInd = zeros(segmentLength, 1);
 for i=1:segmentLength
     queryInd(i) = parentQueryId - segmentLength + i;

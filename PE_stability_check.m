@@ -1,11 +1,17 @@
 % run this to evaluate a certain segment on parfor_densePE once
-% the goal is to check how stable internally used MultiCameraPose is across multiple runs and on various segments
+% the goal is to check how stable internally used MultiCameraPose/P3P is across multiple runs and on various segments
 % data used from previously run inloc_demo.m
 
 %% script inputs - adjust accordingly
 queryMode = 'holoLens1';
-experimentName = 'HL1-v4.2-k3';
-segmentName = '223.jpg'; % the best choice from PV shortlist will be chosen
+experimentName = 'HL1-v4.2-k1';
+segmentName = '251.jpg'; % the best choice from PV shortlist will be chosen
+
+% use this to compare previously run P3P with MCP
+useCustomDbnames = false;
+dbnames = cell(2,1);
+dbnames{1} = 'B-315/6/cutout_6_0_0.jpg';
+dbnames{2} = 'B-315/6/cutout_6_-30_0.jpg';
 
 %% initialize
 setenv("INLOC_EXPERIMENT_NAME", experimentName);
@@ -39,9 +45,11 @@ load(fullfile(params.output.dir, 'densePV_top10_shortlist.mat'), 'ImgList');
 ImgListRecord = ImgList(strcmp({ImgList.queryname}, segmentName));
 qname = segmentName;
 parentQueryId = queryNameToQueryId(segmentName);
-dbnames = ImgListRecord.topNname(:,1);
-dbnamesId = ImgListRecord.dbnamesId(1);
-segmentLength = size(ImgListRecord.topNname, 1);
+if ~useCustomDbnames
+    dbnames = ImgListRecord.topNname(:,1);
+end
+dbnamesId = ImgListRecord.dbnamesId(1); % dbnamesId can be basically arbitrary in this script
+segmentLength = length(dbnames);
 queryInd = zeros(segmentLength, 1);
 for i=1:segmentLength
     queryInd(i) = parentQueryId - segmentLength + i;
