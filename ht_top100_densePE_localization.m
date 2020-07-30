@@ -85,8 +85,11 @@ if exist(densePE_matname, 'file') ~= 2
     end
     
     %% for each query, find top-mCombinations sequences of lengths params.sequence.length
-    areQueriesFromHoloLensSequence = isfield(params, 'sequence') && isfield(params.sequence, 'length');
-    if ~areQueriesFromHoloLensSequence
+    treatQueriesSequentially = isfield(params, 'sequence') && isfield(params.sequence, 'length');
+    if treatQueriesSequentially && strcmp(params.sequence.processing.mode, 'sequentialPV')
+        treatQueriesSequentially = false;
+    end
+    if ~treatQueriesSequentially
         desiredSequenceLength = 1;
     else
         desiredSequenceLength = params.sequence.length;
@@ -145,7 +148,7 @@ if exist(densePE_matname, 'file') ~= 2
         end
     end
 
-    if areQueriesFromHoloLensSequence
+    if treatQueriesSequentially
         posesFromHoloLens = getPosesFromHoloLens(params.HoloLensOrientationDelay, params.HoloLensTranslationDelay, ...
                                                     queryInd, params);
         nQueries = length(ImgList);
@@ -167,7 +170,7 @@ if exist(densePE_matname, 'file') ~= 2
             dbind{idx} = jj;
             actualSequenceLength = size(ImgListSequential(ii).topNname, 1);
             firstQueryId = lastQueryId - actualSequenceLength + 1;
-            if areQueriesFromHoloLensSequence
+            if treatQueriesSequentially
                 thisPosesFromHoloLens = zeros(actualSequenceLength,4,4);
                 k = 1;
                 for thisQueryId=firstQueryId:lastQueryId

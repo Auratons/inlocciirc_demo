@@ -10,8 +10,16 @@ errmaps = cell(1,sequenceLength);
 firstQueryId = queryNameToQueryId(qname) - sequenceLength + 1;
 
 if exist(this_densePV_matname, 'file') ~= 2
+    sequentialPV = isfield(params, 'sequence') && strcmp(params.sequence.processing.mode, 'sequentialPV');
+    firstDbname = dbnames{1};
     for i=1:sequenceLength
-        dbname = dbnames{i};
+
+        if sequentialPV
+            dbname = firstDbname;
+        else
+            dbname = dbnames{i};
+        end
+
         P = Ps{i};
         if all(~isnan(P(:)))
 

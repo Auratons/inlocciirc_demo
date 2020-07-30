@@ -51,12 +51,6 @@ if exist(this_densepe_matname, 'file') ~= 2
             %depth information
             this_db_matname = fullfile(params.dataset.db.cutouts.dir, [dbname, params.dataset.db.cutout.matformat]);
             load(this_db_matname, 'XYZcut');
-            %load transformation matrix (local to global)
-            this_floorid = strsplit(dbname, '/');this_floorid = this_floorid{1};
-            info = parse_WUSTL_cutoutname( dbname );
-            transformation_txtname = fullfile(params.dataset.db.trans.dir, this_floorid, 'transformations', ...
-                        sprintf('trans_%s.txt', info.scan_id));
-            P = load_CIIRC_transformation(transformation_txtname);
 
             %Feature upsampling
             Idbsize = size(XYZcut);
@@ -81,7 +75,6 @@ if exist(this_densepe_matname, 'file') ~= 2
             indx = sub2ind(size(XYZcut(:,:,1)),tent_xdb2d(2,:),tent_xdb2d(1,:));
             X = XYZcut(:,:,1);Y = XYZcut(:,:,2);Z = XYZcut(:,:,3);
             tent_xdb3d = [X(indx); Y(indx); Z(indx)];
-            tent_xdb3d = bsxfun(@plus, P(1:3, 1:3)*tent_xdb3d, P(1:3, 4));
             %Select keypoint correspond to 3D
             idx_3d = all(~isnan(tent_xdb3d), 1); % this typically contains only one
             tent_xq2d = tent_xq2d(:, idx_3d);

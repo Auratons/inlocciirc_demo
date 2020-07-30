@@ -14,18 +14,6 @@ t_s2p = [0; 0; 0];
 R_p2c = R_rpy(0, info.phi, info.theta);
 t_p2c = [0; 0; 0];
 
-%[R, t] for conversion of scan coordinate to floor coordinate
-dbscan_trans_txtname = fullfile(params.dataset.db.trans.dir, floorname, 'transformations', ['trans_', info.scan_id, '.txt']);
-P = load_CIIRC_transformation(dbscan_trans_txtname);
-R_s2f = P(1:3, 1:3);
-t_s2f = P(1:3, 4);
-
-%[R, t] for conversion of floor coordinate to scan coordinate
-R_f2s = R_s2f^-1;
-t_f2s = -R_f2s * t_s2f;
-
-
-
 %Obj: [R, t] for conversion of floor coordinate to camera coordinate
 %conversion: floor -> scan -> panorama -> camera (DB perspective) 
 

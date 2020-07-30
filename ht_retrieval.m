@@ -28,7 +28,7 @@ if exist(top100_matname, 'file') ~= 2
 
     % add secondary queries
     areQueriesFromHoloLensSequence = isfield(params, 'sequence') && isfield(params.sequence, 'length');
-    if ~areQueriesFromHoloLensSequence
+    if ~areQueriesFromHoloLensSequence || strcmp(params.sequence.processing.mode, 'sequentialPV')
         desiredSequenceLength = 1;
     else
         desiredSequenceLength = params.sequence.length;
