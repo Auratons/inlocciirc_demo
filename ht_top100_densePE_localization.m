@@ -86,6 +86,9 @@ if exist(densePE_matname, 'file') ~= 2
     
     %% for each query, find top-mCombinations sequences of lengths params.sequence.length
     treatQueriesSequentially = isfield(params, 'sequence') && isfield(params.sequence, 'length');
+    if treatQueriesSequentially && params.sequence.length == 1
+        treatQueriesSequentially = false; % to avoid NaN pose estimates for queries that don't have HoloLens data
+    end
     if treatQueriesSequentially && strcmp(params.sequence.processing.mode, 'sequentialPV')
         treatQueriesSequentially = false;
     end
