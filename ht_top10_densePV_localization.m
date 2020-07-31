@@ -27,6 +27,10 @@ if exist(densePV_matname, 'file') ~= 2
             end
 
             for queryId=parentQueryId-actualSequenceLength+1:parentQueryId-1
+                idx = find(queryInd,queryId);
+                if ~isempty(idx)
+                    continue;
+                end 
                 queryInd(secondaryIdx) = queryId;
                 secondaryIdx = secondaryIdx + 1;
             end
