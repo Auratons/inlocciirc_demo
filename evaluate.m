@@ -110,7 +110,8 @@ for i=1:nQueries
     descriptionsRow = descriptionsTable(descriptionsTable.id==queryId, :);
     referenceSpace = descriptionsRow.space{1,1};
 
-    [P,T,R,spaceName] = loadPoseFromInLocCIIRC_demo(queryId, ImgList, params);
+    useLegacyAlignments = exist(fullfile(params.input.dir, 'use_legacy_alignments.txt'), 'file');
+    [P,T,R,spaceName] = loadPoseFromInLocCIIRC_demo(queryId, ImgList, params, useLegacyAlignments);
     if ~strcmp(spaceName, referenceSpace) || ~whitelistedQueries(i)
         T = nan(3,1);
         R = nan(3,3);
