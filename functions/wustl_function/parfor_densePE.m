@@ -24,7 +24,7 @@ if exist(this_densepe_matname, 'file') ~= 2
     skipPoseEstimation = false;
     if any(isnan(posesFromHoloLens(:))) % exceptional situation 2.
         Ps(1,:) = {nan(3,4)};
-        skipPoseEstimation = true;
+        useP3P = true;
     else
         queriesWithLowTentatives = zeros(sequenceLength);
         for j=1:sequenceLength
