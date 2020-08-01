@@ -27,7 +27,7 @@ if exist(this_densepe_matname, 'file') ~= 2
         Ps(1,:) = {nan(3,4)};
         useP3P = true;
     end
-    queriesWithLowTentatives = zeros(sequenceLength);
+    queriesWithLowTentatives = zeros(1,sequenceLength);
     for j=1:sequenceLength
         i = ind(j);
         dbname = dbnames{i};
