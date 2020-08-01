@@ -74,14 +74,14 @@ if exist(this_densePV_matname, 'file') ~= 2
     %             keyboard;
 
             else
-                score = 0;
+                score = single(0);
                 errmap = [];
             end
         else
             Iq = [];
             RGBpersp = [];
             RGB_flag = [];
-            score = 0;
+            score = single(0);
             errmap = 0;
         end
         Iqs{i} = Iq;
