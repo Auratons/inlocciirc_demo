@@ -2,16 +2,18 @@
 % the goal is to check how stable internally used MultiCameraPose/P3P is across multiple runs and on various segments
 % data used from previously run inloc_demo.m
 
+% NOTE: ensure that queryMode params have the correct params.sequence.length set up
+
 %% script inputs - adjust accordingly
 queryMode = 'holoLens1';
-experimentName = 'HL1-v4.2-k1';
-segmentName = '251.jpg'; % the best choice from PV shortlist will be chosen
+experimentName = 'HL1-v4.2-k2';
+segmentName = '266.jpg';
 
 % use this to compare previously run P3P with MCP
-useCustomDbnames = false;
+useCustomDbnames = true; % the best choice from PV shortlist will be chosen if false
 dbnames = cell(2,1);
-dbnames{1} = 'B-315/6/cutout_6_0_0.jpg';
-dbnames{2} = 'B-315/6/cutout_6_-30_0.jpg';
+dbnames{1} = 'B-315/24/cutout_24_-180_-30.jpg';
+dbnames{2} = 'B-315/24/cutout_24_150_-30.jpg';
 
 %% initialize
 setenv("INLOC_EXPERIMENT_NAME", experimentName);
@@ -105,4 +107,5 @@ save(fullfile(newParams.input.qlist.path), 'query_imgnames_all');
 paramsBak = params;
 params = newParams;
 evaluate;
+disp(fileread(params.evaluation.errors.path));
 params = paramsBak;
