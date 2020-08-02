@@ -102,6 +102,8 @@ if exist(this_densepe_matname, 'file') ~= 2
     elseif nQueriesWithoutLowTentatives < 2
         Ps(1,:) = {nan(3,4)};
         useP3P = true;
+        % TODO: Should I really use P3P in this case, or do MCP which skips the broken queries and replaces them with those
+        % for which we have inliers? This might be a future improvement
     end
 
     if ~skipPoseEstimation
