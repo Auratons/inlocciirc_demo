@@ -1,3 +1,6 @@
+%% DEPRECATED. Do NOT use without reworking the code first. %%
+assert(false);
+
 addpath('functions/InLocCIIRC_utils/params');
 addpath('functions/InLocCIIRC_utils/load_CIIRC_transformation');
 addpath('functions/InLocCIIRC_utils/mkdirIfNonExistent');

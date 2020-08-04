@@ -1,8 +1,7 @@
 function parfor_densePE( qname, dbnames, dbnamesId, posesFromHoloLens, firstQueryId, lastQueryId, params )
     % there are two exceptional situtations
-    % 1. the actual query length can be lower than params.sequence.length, if currect query is near the beginning of the overall sequence
+    % 1. the actual query length can be lower than params.sequence.length, if current query is near the beginning of the overall sequence
     %       -> just use the smaller sequence. if length is 1, use P3P. this is handles by the caller
-    %           TODO: shouldn't I use sequentialPV instead of P3P?
     % 2. we don't have poses from HoloLens, for some of the queries by the end of the overall sequence. This is because of a delay
     %       -> because the missing queries are coming from higher query Ids to smaller query Ids, and we are interested in the highest
     %           query Id in the sequence, we cannot use MCP at all (I checked it). So I can only use P3P on the single query.
