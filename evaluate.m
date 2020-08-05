@@ -144,6 +144,7 @@ for i=1:nQueries
 end
 
 % errors
+errorsBak = errors;
 errorsTable = struct2table(errors);
 errors = table2struct(sortrows(errorsTable, 'queryId'));
 errorsFile = fopen(params.evaluation.errors.path, 'w');
@@ -153,9 +154,10 @@ for i=1:nQueries
     if errors(i).inMap
         inMapStr = 'Yes';
     end
-    fprintf(errorsFile, '%d,%s,%0.2f,%0.2f\n', errors(i).queryId, inMapStr, errors(i).translation, errors(i).orientation);
+    fprintf(errorsFile, '%d,%s,%0.4f,%0.4f\n', errors(i).queryId, inMapStr, errors(i).translation, errors(i).orientation);
 end
 fclose(errorsFile);
+errors = errorsBak; % we cannot use the sorted. it would break compatibility with blacklistedQueries array!
 
 meaningfulTranslationErrors = [errors(~isnan([errors.translation])).translation];
 meaningfulOrientationErrors = [errors(~isnan([errors.orientation])).orientation];
@@ -197,7 +199,7 @@ for i=1:2:size(thresholds,2)
     offMapCount = 0;
     inMapSize = 0;
     offMapSize = 0;
-    for j=1:size(errors,1)
+    for j=1:length(errors)
         if blacklistedQueries(j)
             continue;
         end
@@ -217,7 +219,7 @@ for i=1:2:size(thresholds,2)
     end
 
     % we want to include cases InLoc got lost, but not blacklisted queries (=no reference poses)
-    nMeaningfulErrors = size(errors,1) - nBlacklistedQueries;
+    nMeaningfulErrors = length(errors) - nBlacklistedQueries;
     scores((i-1)/2+1) = count / nMeaningfulErrors * 100;
     inMapScores((i-1)/2+1) = inMapCount / inMapSize * 100;
     offMapScores((i-1)/2+1) = offMapCount / offMapSize * 100;
