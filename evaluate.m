@@ -157,13 +157,16 @@ for i=1:nQueries
 end
 fclose(errorsFile);
 
-% mean errors
-meanTranslation = mean([errors(~isnan([errors.translation])).translation]);
-meanOrientation = mean([errors(~isnan([errors.orientation])).orientation]);
+meaningfulTranslationErrors = [errors(~isnan([errors.translation])).translation];
+meaningfulOrientationErrors = [errors(~isnan([errors.orientation])).orientation];
 
-% median errors
-medianTranslation = median([errors(~isnan([errors.translation])).translation]);
-medianOrientation = median([errors(~isnan([errors.orientation])).orientation]);
+% statistics of the errors
+meanTranslation = mean(meaningfulTranslationErrors);
+meanOrientation = mean(meaningfulOrientationErrors);
+medianTranslation = median(meaningfulTranslationErrors);
+medianOrientation = median(meaningfulOrientationErrors);
+stdTranslation = std(meaningfulTranslationErrors);
+stdOrientation = std(meaningfulOrientationErrors);
 
 % retrievedQueries
 retrievedQueriesTable = struct2table(retrievedQueries);
@@ -245,11 +248,12 @@ for i=1:size(offMapScores,2)
     fprintf(summaryFile, '%0.2f [%%]', offMapScores(i));
 end
 fprintf(summaryFile, ' -- OffMap\n');
-fprintf(summaryFile, '\nInLocCIIRC got completely lost %d out of %d times. (Not included in the mean/median errors)\n', ...
+fprintf(summaryFile, '\nInLocCIIRC got completely lost %d out of %d times. Not included in the mean/median/std errors.\n', ...
         inLocCIIRCLostCount, nQueries);
 fprintf(summaryFile, '\nErrors (InLocCIIRC poses wrt reference poses):\n');
 fprintf(summaryFile, ' \ttranslation [m]\torientation [deg]\n');
 fprintf(summaryFile, 'Mean\t%0.2f\t%0.2f\n', meanTranslation, meanOrientation);
 fprintf(summaryFile, 'Median\t%0.2f\t%0.2f\n', medianTranslation, medianOrientation);
+fprintf(summaryFile, 'Std\t%0.2f\t%0.2f\n', stdTranslation, stdOrientation);
 fclose(summaryFile);
 disp(fileread(params.evaluation.summary.path));
