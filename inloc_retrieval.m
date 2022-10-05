@@ -26,5 +26,7 @@ function inloc_retrieval(varargin)
 
         create_parent_folder(params.output_topN_mat_path);
         save('-v6', params.output_topN_mat_path, 'ImgList');
+    else
+        fprintf('SKIPPING RETRIEVAL, output "%s" already exists.\n', params.output_topN_mat_path);
     end
 end
