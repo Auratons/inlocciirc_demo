@@ -9,6 +9,7 @@ function inloc_dense_pose_estimation(varargin)
     inloc_add_abs_fn_path('wustl_function');
 
     params = inloc_parse_inputs(varargin{:}).pose_estimation;
+    n_workers = 8;
 
     % densePE (topN reranking -> pnp_topN pose candidate)
     densePE_matname = params.output_candidate_mat_path;
@@ -24,12 +25,12 @@ function inloc_dense_pose_estimation(varargin)
         ImgList = struct('query_path', {}, 'topN_db_paths', {}, 'topN_scores', {}, 'P', {});
 
         % load(params.input_db_depth_mat_path, 'db_depthnames_all');
-        for ii = 1:1:1%length(ImgList_retrieval)
+        for ii = 1:1:length(ImgList_retrieval)
             curr_query_path = ImgList_retrieval(ii).query_path;
             curr_topN_db_paths = ImgList_retrieval(ii).topN_db_paths;
 
             ImgList(ii).query_path = curr_query_path;
-            ImgList(ii).topN_db_paths = ImgList_retrieval(ii).topN_db_paths;
+            ImgList(ii).topN_db_paths = curr_topN_db_paths;
             % ImgList(ii).topN_scores = {};
 
             % preload query feature
@@ -37,15 +38,15 @@ function inloc_dense_pose_estimation(varargin)
             cnnq = query_features(idx).features;
 
             if exist(fullfile(params.output_gv_dense_dir, filename(curr_query_path)), 'dir') ~= 7
-                mkdir(fullfile(params.output_gv_dense_dir, filename(qname)));
+                mkdir(fullfile(params.output_gv_dense_dir, filename(curr_query_path)));
             end
 
-            parfor kk = 1:1:length(ImgList_retrieval(ii).topN_db_paths)
+            parfor (kk = 1:1:length(curr_topN_db_paths), n_workers)
                 parfor_denseGV( cnnq, curr_query_path, curr_topN_db_paths{kk}, params );
                 fprintf('dense matching: %s vs %s DONE. \n', curr_query_path, curr_topN_db_paths{kk});
             end
 
-            for jj = 1:1:length(ImgList_retrieval(ii).topN_db_paths)
+            for jj = 1:1:length(curr_topN_db_paths)
                 this_gvresults = load(fullfile( ...
                     params.output_gv_dense_dir, ...
                     filename(curr_query_path), ...
@@ -72,12 +73,12 @@ function inloc_dense_pose_estimation(varargin)
 
         % dense pnp
         for ii = 1:1:length(ImgList)
-            if exist(fullfile(params.output_pnp_dense_inlier_dir, filename(ImgList(ii).query_path), 'dir') ~= 7
-                mkdir(fullfile(params.output_pnp_dense_inlier_dir, filename(ImgList(ii).query_path));
+            if exist(fullfile(params.output_pnp_dense_inlier_dir, filename(ImgList(ii).query_path)), 'dir') ~= 7
+                mkdir(fullfile(params.output_pnp_dense_inlier_dir, filename(ImgList(ii).query_path)));
             end
             fprintf("Creating %s\n", fullfile(params.output_pnp_dense_inlier_dir, filename(ImgList(ii).query_path)));
         end
-        parfor ii = 1:1:length(qlist)
+        parfor (ii = 1:1:length(qlist), n_workers)
             parfor_densePE( ...
                 qlist{ii}, ...
                 dblist{ii}, ...
@@ -100,6 +101,8 @@ function inloc_dense_pose_estimation(varargin)
 
         create_parent_folder(densePE_matname);
         save('-v6', densePE_matname, 'ImgList');
+    else
+        fprintf('SKIPPING POSE ESTIMATION, output "%s" already exists.\n', densePE_matname);
     end
 end
 
