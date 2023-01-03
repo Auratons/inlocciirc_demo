@@ -2,13 +2,12 @@
 % params_file path to yaml
 % experiment_name with name of dict in the yaml file
 
-% params_file = '/home/kremeto1/inloc/dvc/pipeline-hagia-conv5-pyrender/params.yaml';
-% experiment_name = 'main';
-% params_file = '/home/kremeto1/inloc/dvc/pipeline-hagia-pyrender/params.yaml';
-params_file = '/home/kremeto1/inloc/dvc/pipeline-artwin-conv5-pyrender/params.yaml';
-experiment_name = 'main';
-% params_file = '/home/kremeto1/inloc/dvc/pipeline-inloc-artwin-neural/params.yaml';
-% experiment_name = 'artwin';
+% To support debug in Matlab -desktop and running without an X server on the cluster.
+% See dvc/scripts/inloc_pose_verification.sh where these variables are generated dynamically.
+if ~exist('params_file', 'var')
+    params_file = '/home/kremeto1/inloc/dvc/pipeline-artwin-conv5-pyrender/params.yaml';
+    experiment_name = 'main';
+end
 
 [filepath, ~, ~] = fileparts(mfilename('fullpath'));
 addpath(fullfile(filepath, '..', 'functions', 'yaml'));
@@ -28,7 +27,7 @@ run(fullfile(filepath, '..', 'functions', 'matconvnet', 'matlab', 'vl_setupnn.m'
 
 parameters = ReadYaml(params_file).(experiment_name);
 
-workers_cnt = 1;
+workers_cnt = 16;
 
 types = {'db', 'query'};
 
@@ -76,19 +75,19 @@ load(params.input_netvlad_pretrained, 'net');
 net = relja_simplenn_tidy(net);
 net = relja_cropToLayer(net, 'postL2');
 
-all_features = struct();
 for idx = 1:length(types)
     type = types{idx};
-    output_mat_path = params.(sprintf('output_%s_features_mat_path', type));
+    output_path = params.(sprintf('output_%s_features_path', type));
 
-    if exist(output_mat_path, 'file') ~= 2
+    if exist(output_path, 'dir') ~= 7
         if ~isfield(file_lists, sprintf('%s_filenames', type))
             value = load(params.(sprintf('input_%s_mat_path', type)), 'filenames');
             file_lists.(sprintf('%s_filenames', type)) = value.filenames;
         end
         filenames = file_lists.(sprintf('%s_filenames', type));
         file_count = size(filenames, 2);
-        features = struct('img_path', {}, 'features', {});
+        features = struct();
+        create_parent_folder(output_path);
         for i=1:file_count
             fprintf('%s Finding features for %s image #%d/%d\n\n', datestr(now,'HH:MM:SS.FFF'), type, i, file_count);
             img_path = filenames{i};
@@ -97,19 +96,14 @@ for idx = 1:length(types)
             for l = setdiff([1, 2, 3, 4, 5, 6], [3, get_with_default(params, 'input_feature_layer', 6)])
                 cnn{l} = [];
             end
-            % for l = [3 5]
-            %     cnn{l}.x = cnn{l}.x;
-            % end
-            features(i).img_path = img_path;
-            features(i).features = cnn;
+            features.img_path = img_path;
+            features.features = cnn;
+            [~, name] = fileparts(img_path);
+            save(fullfile(output_path, name + ".mat"), 'features', '-v7.3');
         end
 
-        create_parent_folder(output_mat_path);
-        save(output_mat_path, 'features', '-v7.3');
-
-        all_features.(sprintf('%s_features', type)) = features;
     else
-        fprintf('SKIPPING FEATURE COMPUTATION, output "%s" already exists.\n', output_mat_path);
+        fprintf('SKIPPING FEATURE COMPUTATION, output "%s" already exists.\n', output_path);
     end
 end
 
@@ -119,26 +113,21 @@ params = parameters.scores;
 
 score = struct();
 if exist(params.output_scores_mat_path, 'file') ~= 2
-    if ~isfield(all_features, 'db_features')
-        value = load(params.input_db_features_mat_path).features;
-        all_features.db_features = value;
-    end
-    if ~isfield(all_features, 'query_features')
-        value = load(params.input_query_features_mat_path).features;
-        all_features.query_features = value;
-    end
-    db_features = all_features.db_features;
-    query_features = all_features.query_features;
-    n_img = size(db_features, 2);
-    n_query = size(query_features, 2);
+    imgs = dir(fullfile(params.input_db_features_path, '*.mat'));
+    queries = dir(fullfile(params.input_query_features_path, '*.mat'));
+    n_img = size(imgs, 1);
+    n_query = size(queries, 1);
+
     coarse_feature_level = get_with_default(params, 'input_feature_layer', 6);
     score = struct('query_path', {}, 'scores', {}, 'db_score_paths', {});
 
     db_paths = cell(1, n_img);
-    all_db_features = zeros(n_img, size(db_features(1).features{coarse_feature_level}.x(:), 1));
+    db_features = load(fullfile(imgs(1).folder, imgs(1).name));
+    all_db_features = zeros(n_img, size(db_features.features.features{coarse_feature_level}.x(:), 1));
     for i=1:n_img
-        all_db_features(i, :) = db_features(i).features{coarse_feature_level}.x(:)';
-        db_paths{i} = db_features(i).img_path;
+        db_features = load(fullfile(imgs(i).folder, imgs(i).name));
+        all_db_features(i, :) = db_features.features.features{coarse_feature_level}.x(:)';
+        db_paths{i} = db_features.features.img_path;
     end
     all_db_features = all_db_features';
     all_db_features = all_db_features ./ vecnorm(all_db_features);
@@ -146,12 +135,13 @@ if exist(params.output_scores_mat_path, 'file') ~= 2
 
     for i=1:n_query
         fprintf('%s Processing query %d/%d\n', datestr(now,'HH:MM:SS.FFF'), i, n_query);
-        single_q_features = query_features(i).features{coarse_feature_level}.x(:)';
+        query_features = load(fullfile(queries(i).folder, queries(i).name));
+        single_q_features = query_features.features.features{coarse_feature_level}.x(:)';
         single_q_features = single_q_features ./ vecnorm(single_q_features);
         check_is_normalized(single_q_features);
         single_q_features = repmat(single_q_features, n_img, 1)';
         similarityScores = dot(single_q_features, all_db_features);
-        score(i).query_path = query_features(i).img_path;
+        score(i).query_path = query_features.features.img_path;
         score(i).scores = single(similarityScores); % NOTE: this is not a probability distribution (and it does not have to be)
         score(i).db_score_paths = db_paths;
     end
@@ -191,14 +181,6 @@ else
 end
 
 
-fprintf('\n');
-delete(gcp('nocreate'));
-cluster = parcluster;
-cluster.NumWorkers = workers_cnt;
-saveProfile(cluster);
-parpool('local', workers_cnt);
-
-
 fprintf('\n%s >>> Running inloc_dense_pose_estimation...\n', datestr(now,'HH:MM:SS.FFF'));
 params = parameters.pose_estimation;
 
@@ -207,22 +189,20 @@ pnp_topN = get_with_default(params, 'input_pnp_topN', 10);
 % densePE (topN reranking -> pnp_topN pose candidate)
 densePE_matname = params.output_candidate_mat_path;
 if exist(densePE_matname, 'file') ~= 2
+
+    fprintf('\n');
+    delete(gcp('nocreate'));
+    cluster = parcluster;
+    cluster.NumWorkers = workers_cnt;
+    saveProfile(cluster);
+    parpool('local', workers_cnt);
+
     if isempty(fieldnames(ImgList))
         ImgList_retrieval = load(params.input_topN_mat_path, 'ImgList');
         ImgList_retrieval = ImgList_retrieval.ImgList;
     else
         ImgList_retrieval = ImgList;
     end
-    if ~isfield(all_features, 'db_features')
-        value = load(params.input_db_features_mat_path).features;
-        all_features.db_features = value;
-    end
-    if ~isfield(all_features, 'query_features')
-        value = load(params.input_query_features_mat_path).features;
-        all_features.query_features = value;
-    end
-    db_features = all_features.db_features;
-    query_features = all_features.query_features;
 
     ImgList = struct('query_path', {}, 'topN_db_paths', {}, 'topN_scores', {}, 'P', {}, 'R', {}, 't', {});
 
@@ -234,8 +214,13 @@ if exist(densePE_matname, 'file') ~= 2
         ImgList(ii).topN_db_paths = curr_topN_db_paths;
 
         % preload query feature
-        idx = find(strcmp(convertCharsToStrings(curr_query_path), {query_features.img_path}));
-        cnnq = query_features(idx).features;
+        [~, name] = fileparts(curr_query_path);
+        query_features = load(fullfile(params.input_query_features_path, name + ".mat"));
+        if curr_query_path == query_features.features.img_path
+            cnnq = query_features.features.features;
+        else
+            error('Not the same!');
+        end
 
         if exist(fullfile(params.output_gv_dense_dir, filename(curr_query_path)), 'dir') ~= 7
             mkdir(fullfile(params.output_gv_dense_dir, filename(curr_query_path)));
@@ -244,7 +229,7 @@ if exist(densePE_matname, 'file') ~= 2
         coarse_feature_level = get_with_default(params, 'input_feature_layer', 6);
 
         parfor (kk = 1:length(curr_topN_db_paths), workers_cnt)
-            parfor_denseGV( cnnq, curr_query_path, curr_topN_db_paths{kk}, params, db_features );
+            parfor_denseGV( cnnq, curr_query_path, curr_topN_db_paths{kk}, params );
         end
 
         for jj = 1:length(curr_topN_db_paths)
@@ -339,24 +324,24 @@ if exist(candidate_renders, 'dir') == 7 && exist(neuralPV_matname, 'file') ~= 2
 
         this_P = nan(3, 4);
         this_score = 0;
+        this_db = ImgList_densePE(ii).topN_db_paths(1);
+        this_db = this_db{:};
+        [~, dbstem, ~] = fileparts(this_db);
+        this_render = fullfile(candidate_renders, qstem, strcat(dbstem, "_color.png"));
         for jj = 1:PV_topN
             % Strip the rank of the rendering from the name of the image
             P = ImgList_densePE(ii).P(jj);
+            P = P{:};
             db_path = ImgList_densePE(ii).topN_db_paths(jj);
             db_path = db_path{:};
             [~, dbstem, ~] = fileparts(db_path);
 
             candidate_render = fullfile(candidate_renders, qstem, strcat(dbstem, "_color.png"));
-
-            % this_db_matname = fullfile(params.input_cutout_matfiles_path, strcat("cutout_", erase(filename(db_path), "_reference"), ".mat"));
-            % if exist(this_db_matname, 'file') ~= 2
-            %     this_db_matname = fullfile(params.input_cutout_matfiles_path, strcat(filename(db_path), ".mat"));
-            % end
-            % I_synth = load(this_db_matname, 'RGBcut').RGBcut;
+            if exist(candidate_render, 'file') ~= 2
+                continue;
+            end
             Is = imread(candidate_render);
 
-            % render_path = strcat(erase(db_path, "_reference.png"), "_color.png");
-            % I_synth = imread(render_path);
             % desquarify images from NRIW rendering
             shape = size(Is);
             if (shape(1) == shape(2))
@@ -383,12 +368,16 @@ if exist(candidate_renders, 'dir') == 7 && exist(neuralPV_matname, 'file') ~= 2
             if score > this_score
                 this_score = score;
                 this_P = P;
+                this_render = candidate_render;
+                this_db = db_path;
             end
         end
 
         ImgList_rendered(ii).query_path = ImgList_densePE(ii).query_path;
         ImgList_rendered(ii).score = this_score;
         ImgList_rendered(ii).P = this_P;
+        ImgList_rendered(ii).render_path = this_render;
+        ImgList_rendered(ii).top_db_path = this_db;
     end
     save('-v6', neuralPV_matname, 'ImgList_rendered');
 else
@@ -432,7 +421,7 @@ function create_parent_folder(filename)
     end
 end
 
-function parfor_denseGV( cnnq, qname, dbname, params, features)
+function parfor_denseGV( cnnq, qname, dbname, params)
     [~, dbbasename] = fileparts(filename(dbname));
     [~, qbasename] = fileparts(filename(qname));
     coarselayerlevel = get_with_default(params, 'input_feature_layer', 6);
@@ -442,10 +431,9 @@ function parfor_denseGV( cnnq, qname, dbname, params, features)
 
     if exist(this_densegv_matname, 'file') ~= 2
 
-        % vload input feature
-        idx = find(strcmp(convertCharsToStrings(dbname), {features.img_path}));
-        cnndb = features(idx).features;
-        % cnndb = cnndb.cnn;
+        % load input feature
+        features = load(fullfile(params.input_db_features_path, dbbasename + ".mat"));
+        cnndb = features.features.features;
 
         % coarse-to-fine matching
         cnnfeat1size = size(cnnq{finelayerlevel}.x);
