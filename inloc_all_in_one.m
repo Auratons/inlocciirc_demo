@@ -5,7 +5,7 @@
 % To support debug in Matlab -desktop and running without an X server on the cluster.
 % See dvc/scripts/inloc_pose_verification.sh where these variables are generated dynamically.
 if ~exist('params_file', 'var')
-    params_file = '/home/kremeto1/inloc/dvc/pipeline-artwin-conv5-pyrender/params.yaml';
+    params_file = '/home/kremeto1/inloc/dvc/pipeline-artwin-conv5-spheres/params.yaml';
     experiment_name = 'main';
 end
 
@@ -204,7 +204,7 @@ if exist(densePE_matname, 'file') ~= 2
         ImgList_retrieval = ImgList;
     end
 
-    ImgList = struct('query_path', {}, 'topN_db_paths', {}, 'topN_scores', {}, 'P', {}, 'R', {}, 't', {});
+    ImgList = struct('query_path', {}, 'topN_db_paths', {}, 'topN_scores', {}, 'P', {}, 'K', {}, 'R', {}, 't', {});
 
     for ii = 1:length(ImgList_retrieval)
         curr_query_path = ImgList_retrieval(ii).query_path;
@@ -280,7 +280,8 @@ if exist(densePE_matname, 'file') ~= 2
             this_densepe_matname = fullfile(params.output_pnp_dense_inlier_dir, filename(ImgList(ii).query_path), strcat(dbbasename, ".mat"));
             load(this_densepe_matname, 'P');
             ImgList(ii).P{jj} = P;
-            [~, R, t] = P2KRC(P);
+            [K, R, t] = P2KRC(P);
+            ImgList(ii).K{jj} = K;
             ImgList(ii).R{jj} = R;
             ImgList(ii).t{jj} = t;
         end
@@ -313,21 +314,35 @@ if exist(candidate_renders, 'dir') == 7 && exist(neuralPV_matname, 'file') ~= 2
         qpath = ImgList_densePE(ii).query_path;
         [~, qstem, ext] = fileparts(filename(qpath));
         fprintf('\n%s Processing query %s%s\n', datestr(now,'HH:MM:SS.FFF'), qstem, ext) % debug
-        %Load query image & output information
+        % Load query image & output information
         Iq = imread(qpath);
         reference_size = size(Iq);
         reference_h = reference_size(1);
         reference_w = reference_size(2);
-
-        % normalization
-        Iq_norm = normalize(Iq);
 
         this_P = nan(3, 4);
         this_score = 0;
         this_db = ImgList_densePE(ii).topN_db_paths(1);
         this_db = this_db{:};
         [~, dbstem, ~] = fileparts(this_db);
+        % Just initial value for evaluation
         this_render = fullfile(candidate_renders, qstem, strcat(dbstem, "_color.png"));
+
+        % Just desquerify if needed
+        Is = imread(this_render);
+        shape = size(Is);
+        render_h = shape(1);
+        render_w = shape(2);
+        if render_h ~= render_w && reference_h == reference_w
+            square_size = reference_h;
+            offset_h = fix((square_size - render_h) / 2);
+            offset_w = fix((square_size - render_w) / 2);
+            Iq = Iq(offset_h+1:offset_h + render_h, offset_w+1:offset_w + render_w, :);
+        end
+
+        % normalization
+        Iq_norm = normalize(Iq);
+
         for jj = 1:PV_topN
             % Strip the rank of the rendering from the name of the image
             P = ImgList_densePE(ii).P(jj);
@@ -483,7 +498,7 @@ function parfor_densePE( qname, dbname, params )
         tent_xq2d = at_featureupsample(tent_xq2d, this_gvresults.cnnfeat1size, Iqsize);
         tent_xdb2d = at_featureupsample(tent_xdb2d, this_gvresults.cnnfeat2size, Idbsize);
         %query ray
-        tent_ray2d = calibration_mat^-1 * [tent_xq2d; ones(1, size(tent_xq2d, 2))];
+        tent_ray2d = calibration_mat(1:3, 1:3)^-1 * [tent_xq2d; ones(1, size(tent_xq2d, 2))];
         %DB 3d points
         indx = sub2ind(size(XYZcut(:,:,1)),tent_xdb2d(2,:),tent_xdb2d(1,:));
         X = XYZcut(:,:,1);Y = XYZcut(:,:,2);Z = XYZcut(:,:,3);
