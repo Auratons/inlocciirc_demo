@@ -32,7 +32,7 @@ eval_params = parameters.evaluation;
 if isfield(eval_params, 'input_query_mat_path')
     qlist = eval_params.input_query_mat_path;
 else
-    qlist = fullfile(params.output.dir, 'query_imgnames_all.mat');
+    qlist = fullfile(eval_params.root_to_process, 'query_imgnames_all.mat');
 end
 
 params = struct();

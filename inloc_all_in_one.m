@@ -5,7 +5,7 @@
 % To support debug in Matlab -desktop and running without an X server on the cluster.
 % See dvc/scripts/inloc_pose_verification.sh where these variables are generated dynamically.
 if ~exist('params_file', 'var')
-    params_file = '/home/kremeto1/inloc/dvc/pipeline-artwin-conv5-spheres/params.yaml';
+    params_file = '/home/kremeto1/inloc/dvc/pipeline-grand-conv5-pyrender/params.yaml';
     experiment_name = 'main';
 end
 
@@ -333,7 +333,7 @@ if exist(candidate_renders, 'dir') == 7 && exist(neuralPV_matname, 'file') ~= 2
         shape = size(Is);
         render_h = shape(1);
         render_w = shape(2);
-        if render_h ~= render_w && reference_h == reference_w
+        if (render_h ~= render_w && reference_h == reference_w) || (render_h == render_w && reference_h == reference_w && reference_h > render_h)
             square_size = reference_h;
             offset_h = fix((square_size - render_h) / 2);
             offset_w = fix((square_size - render_w) / 2);
@@ -359,7 +359,7 @@ if exist(candidate_renders, 'dir') == 7 && exist(neuralPV_matname, 'file') ~= 2
 
             % desquarify images from NRIW rendering
             shape = size(Is);
-            if (shape(1) == shape(2))
+            if (shape(1) == shape(2) && shape(1) > reference_h)
                 square_size = shape(1);
                 offset_h = fix((square_size - reference_h) / 2);
                 offset_w = fix((square_size - reference_w) / 2);
