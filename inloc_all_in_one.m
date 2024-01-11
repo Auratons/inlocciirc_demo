@@ -5,7 +5,7 @@
 % To support debug in Matlab -desktop and running without an X server on the cluster.
 % See dvc/scripts/inloc_pose_verification.sh where these variables are generated dynamically.
 if ~exist('params_file', 'var')
-    params_file = '/home/kremeto1/inloc/dvc/pipeline-grand-conv5-pyrender/params.yaml';
+    params_file = '/home/kremeto1/inloc/dvc/pipeline-grand-conv5-pyrender_corrected_missing_points/params.yaml';
     experiment_name = 'main';
 end
 
@@ -123,37 +123,64 @@ if exist(params.output_scores_mat_path, 'file') ~= 2
 
     db_paths = cell(1, n_img);
     db_features = load(fullfile(imgs(1).folder, imgs(1).name));
-    all_db_features = zeros(n_img, size(db_features.features.features{coarse_feature_level}.x(:), 1));
+    all_db_features = zeros(size(db_features.features.features{coarse_feature_level}.x(:), 1), n_img);
     for i=1:n_img
+        fprintf('%s Loading features of image %d/%d\n', datestr(now,'HH:MM:SS.FFF'), i, n_img);
         db_features = load(fullfile(imgs(i).folder, imgs(i).name));
-        all_db_features(i, :) = db_features.features.features{coarse_feature_level}.x(:)';
+        all_db_features(:, i) = db_features.features.features{coarse_feature_level}.x(:)';
+        all_db_features(:, i) = all_db_features(:, i) ./ vecnorm(all_db_features(:, i));
         db_paths{i} = db_features.features.img_path;
+        clearvars db_features;
     end
-    all_db_features = all_db_features';
-    all_db_features = all_db_features ./ vecnorm(all_db_features);
-    check_is_normalized(all_db_features);
 
-    for i=1:n_query
+    for i=low:high %n_query
         fprintf('%s Processing query %d/%d\n', datestr(now,'HH:MM:SS.FFF'), i, n_query);
         query_features = load(fullfile(queries(i).folder, queries(i).name));
         single_q_features = query_features.features.features{coarse_feature_level}.x(:)';
         single_q_features = single_q_features ./ vecnorm(single_q_features);
         check_is_normalized(single_q_features);
-        single_q_features = repmat(single_q_features, n_img, 1)';
-        similarityScores = dot(single_q_features, all_db_features);
+        % single_q_features = repmat(single_q_features, n_img, 1)';
+        % similarityScores = dot(single_q_features, all_db_features);
+        fprintf('%s Piecewise multiplication start\n', datestr(now,'HH:MM:SS.FFF'));
+        % similarityScores = single_q_features * all_db_features;
+        similarityScores = zeros(1, n_img);
+        block_size = 100;
+        for j = 1:block_size:size(all_db_features, 2)
+            fprintf('%s Index from %d\n', datestr(now,'HH:MM:SS.FFF'), j);
+            cols = j:min(j + block_size - 1, size(all_db_features, 2));
+            block = all_db_features(:, cols);
+            similarityScores(cols) = single_q_features * block;
+        end
         score(i).query_path = query_features.features.img_path;
         score(i).scores = single(similarityScores); % NOTE: this is not a probability distribution (and it does not have to be)
         score(i).db_score_paths = db_paths;
+        fprintf('%s Broadcast end\n', datestr(now,'HH:MM:SS.FFF'));
+
+        % create_parent_folder(params.output_scores_mat_path);
+        % save(params.output_scores_mat_path, 'score', '-v7.3');
+        clearvars similarityScores;
     end
 
     clearvars all_db_features
 
     create_parent_folder(params.output_scores_mat_path);
-    save(params.output_scores_mat_path, 'score');
+    fname = sprintf('/home/kremeto1/inloc/datasets/pipeline-inloc-conv5-pyrender/scores-%d-%d.mat', low, high);
+    save(fname, 'score', '-v7.3');
 else
     fprintf('SKIPPING SCORE COMPUTATION, output "%s" already exists.\n', params.output_scores_mat_path);
 end
 
+% The code above must be ran for instance two times, for lower and upper half of query images.
+% In Matlab, both separate scores files must be merged by sample code below:
+% -> struct with field score of size 356 with upper half filled
+% x = load('/home/kremeto1/inloc/datasets/pipeline-inloc-conv5-pyrender/scores-201-356.mat');
+% -> 1x200 struct array with fields query_path, scores, db_score_paths
+% load('/home/kremeto1/inloc/datasets/pipeline-inloc-conv5-pyrender/scores-1-200.mat');
+% x.score(1:200) = score;
+% score = x.score;
+% fname = sprintf('/home/kremeto1/inloc/datasets/pipeline-inloc-conv5-pyrender/scores.mat');
+% save(fname, 'score', '-v7.3');
+% exit
 
 fprintf('\n%s >>> Running inloc_retrieval...\n', datestr(now,'HH:MM:SS.FFF'));
 params = parameters.retrieval;
@@ -329,15 +356,17 @@ if exist(candidate_renders, 'dir') == 7 && exist(neuralPV_matname, 'file') ~= 2
         this_render = fullfile(candidate_renders, qstem, strcat(dbstem, "_color.png"));
 
         % Just desquerify if needed
-        Is = imread(this_render);
-        shape = size(Is);
-        render_h = shape(1);
-        render_w = shape(2);
-        if (render_h ~= render_w && reference_h == reference_w) || (render_h == render_w && reference_h == reference_w && reference_h > render_h)
-            square_size = reference_h;
-            offset_h = fix((square_size - render_h) / 2);
-            offset_w = fix((square_size - render_w) / 2);
-            Iq = Iq(offset_h+1:offset_h + render_h, offset_w+1:offset_w + render_w, :);
+        if exist(this_render, 'file') == 2  % Try it, 6DOF could not be found
+            Is = imread(this_render);
+            shape = size(Is);
+            render_h = shape(1);
+            render_w = shape(2);
+            if (render_h ~= render_w && reference_h == reference_w) || (render_h == render_w && reference_h == reference_w && reference_h > render_h)
+                square_size = reference_h;
+                offset_h = fix((square_size - render_h) / 2);
+                offset_w = fix((square_size - render_w) / 2);
+                Iq = Iq(offset_h+1:offset_h + render_h, offset_w+1:offset_w + render_w, :);
+            end
         end
 
         % normalization

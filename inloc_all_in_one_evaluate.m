@@ -22,7 +22,7 @@ run(fullfile(filepath, '..', 'functions', 'matconvnet', 'matlab', 'vl_setupnn.m'
 % To support debug in Matlab -desktop and running without an X server on the cluster.
 % See dvc/scripts/inloc_pose_verification.sh where these variables are generated dynamically.
 if ~exist('params_file', 'var')
-    params_file = '/home/kremeto1/inloc/dvc/pipeline-artwin-conv5-spheres/params.yaml';
+    params_file = '/home/kremeto1/inloc/dvc/pipeline-artwin-conv5-pyrender/params.yaml';
     experiment_name = 'main';
 end
 
@@ -36,7 +36,6 @@ else
 end
 
 params = struct();
-%params.output.dir = '/home/kremeto1/inloc/datasets/pipeline-artwin-conv5-spheres/';
 params.output.dir = eval_params.root_to_process;
 params.input.qlist.path = qlist;
 params.evaluation.dir = fullfile(params.output.dir, 'evaluations');
@@ -47,7 +46,7 @@ params.input_candidate_pose_renders_path = fullfile(params.output.dir, 'candidat
 params.evaluation.errors.path = fullfile(params.evaluation.dir, 'localization_errors.txt');
 params.evaluation.retrieved.queries.path = fullfile(params.evaluation.dir, 'retrieved_queries.txt');
 params.evaluation.summary.path = fullfile(params.evaluation.dir, 'summary.txt');
-params.output.gv_dense.dir = fullfile(params.output.dir, 'gv_dense');
+params.evaluation.overlays = fullfile(params.evaluation.dir,'all_results');
 
 load(params.input.qlist.path);
 
@@ -62,6 +61,7 @@ mkdirIfNonExistent(params.evaluation.dir);
 mkdirIfNonExistent(params.evaluation.retrieved.poses.dir);
 mkdirIfNonExistent(params.evaluation.query_vs_synth.dir);
 mkdirIfNonExistent(params.evaluation.query_segments_vs_synth_segments.dir);
+mkdirIfNonExistent(params.evaluation.overlays);
 
 %% quantitative results
 nQueries = size(query_imgnames_all, 2);
@@ -73,10 +73,9 @@ lostIds = [];
 for i=1:numel(ImgList)
     fprintf('Processing %d/%d\n', i, numel(ImgList));
 
+    render_pose_filename = sprintf('%s_params.json', erase(erase(erase(ImgList(i).render_path, "_color.png"), "_out.png"), "_neural"));
     queryPoseFilename = sprintf('%s_params.json', erase(ImgList(i).query_path, "_reference.png"));
-    queryPoseFilename = strrep(queryPoseFilename, 'joined-dataset-spheres', 'joined-dataset-pyrender-black_bg');
-    mkdirIfNonExistent(params.evaluation.dir);
-
+    % queryPoseFilename = strrep(queryPoseFilename, 'joined-dataset-spheres', 'joined-dataset-pyrender-black_bg');
 
     % [P,ref_spaceName,fullName] = getReferencePose(i,ImgList,params);
     fid = fopen(queryPoseFilename);
@@ -86,57 +85,44 @@ for i=1:numel(ImgList)
     val = jsondecode(str);
     P = val.camera_pose;
 
-    P_ref = {};
-    P_ref.R = P(1:3, 1:3);
-    P_ref.t = P(1:3, 4);
-    P_ref.P = P;
-    P_ref.C = -P_ref.R' * P_ref.t;
+    if ~all(isnan(ImgList(i).P), 'all')
+        fid = fopen(render_pose_filename);
+        raw = fread(fid, inf);
+        str = char(raw');
+        fclose(fid);
+        val = jsondecode(str);
+        P_est.P = val.camera_pose;
+        P_est.P(1:3, 2:3) = - P_est.P(1:3, 2:3);
+    else
+        P_est.P = ImgList(i).P;
+    end
 
-    P_est = {};
-    P_est.P = ImgList(i).P;
-    [P_est.K, P_est.R, P_est.C] = P2KRC(P_est.P);
-    P_est.t = -P_est.R * P_est.C;
+    % P is camera pose (extrinsic matrix) from _param.json files
+    P_ref = {};
+    P_ref.P = P;
+    P_ref.R = P_ref.P(1:3, 1:3)';
+    P_ref.t = P_ref.P(1:3, 4);
+    P_ref.C = -P_ref.R * P_ref.t;
+
+    P_est.R = P_est.P(1:3, 1:3)';
+    P_est.t = P_est.P(1:3, 4);
+    P_est.C = -P_est.R * P_est.t;
+
+    % P is camera rotation and position
+    % P_est = {};
+    % P_est.P = ImgList(i).P;
+    % [P_est.K, P_est.R, P_est.C] = P2KRC(P_est.P);
+    % P_est.R = P_est.P(1:3, 1:3);
+    % P_est.C = P_est.P(1:3, 4);
+    % P_est.t = -P_est.R' * P_est.C;
     % est_spaceName = strsplit(ImgList(i).topNname{1},'/'); est_spaceName = est_spaceName{1};
     % est_mapName = strsplit(est_spaceName,'_'); est_mapName = est_mapName{1};
     % ref_mapName = strsplit(ref_spaceName,'_'); ref_mapName = ref_mapName{1};
 
-    C_ref = [];
-    R_ref = [];
-    if 0 %~strcmp(est_spaceName,ref_spaceName) &&  strcmp(est_mapName,ref_mapName)
-        interesting = true;
-        transform = [];
-        E_h_12 = [1.000000000000 0.000265824958 -0.000320481340 -0.965982019901;
-            -0.000265917915 0.999999940395 -0.000290183641 0.005340866279;
-            0.000320404157 0.000290269381 1.000000119209 0.241866841912;
-            0.000000000000 0.000000000000 0.000000000000 1.000000000000];
+    transform = eye(4);
+    C_ref = P_ref.C;
+    R_ref = P_ref.R;
 
-        E_l_21 = [ 0.999996125698 0.000008564073 0.002756817034 3.283028602600;
-            -0.000006930272 0.999999821186 -0.000592759345 0.000593465462;
-            -0.002756824018 0.000592722441 0.999996006489 1.970497488976;
-            0.000000000000 0.000000000000 0.000000000000 1.000000000000];
-        switch (est_spaceName)
-            case params.dataset.db.space_names{1}
-                transform = E_h_12;
-            case params.dataset.db.space_names{2}
-                transform = inv(E_h_12);
-            case params.dataset.db.space_names{3}
-                transform = inv(E_l_21);
-            case params.dataset.db.space_names{4}
-                transform = E_l_21;
-            otherwise
-                interesting = true
-                error('ups')
-                % getSynthView(params,ImgList,i,1,true);
-        end
-
-        C_ref = transform*[P_ref.C; 1];
-        C_ref = C_ref(1:3);
-        R_ref = P_ref.R*transform(1:3, 1:3);
-    else
-        transform = eye(4);
-        C_ref = P_ref.C;
-        R_ref = P_ref.R;
-    end
     % query_eval{i}.pano_id = strsplit(fullName,'/');
     % query_eval{i}.pano_id = query_eval{i}.pano_id{1};
     query_eval{i}.id = i;
@@ -166,60 +152,56 @@ for i=1:numel(ImgList)
     errors(i).orientation = rotationDistance(R_ref, P_est.R);
     errors(i).queryId =  ImgList(i).query_path;
     errors(i).inMap = strcmp(query_eval{i}.ref_space, query_eval{i}.est_space);
-    inLocCIIRCLostCount = inLocCIIRCLostCount + isnan(errors(i).translation);
     if isnan(errors(i).translation)
         lostIds = [lostIds i];
+        inLocCIIRCLostCount = inLocCIIRCLostCount + 1;
     end
 
-    visual_inspection = true;
+    visual_inspection = false;
     if errors(i).translation > 2 && visual_inspection
         %         getSynthView(params,ImgList,i,1,true,params.evaluation.dir,sprintf('err_%.2fm',errors(i).translation));
-
     end
 
-    mkdirIfNonExistent(fullfile(params.evaluation.dir,'all_results'));
     if visual_inspection  && ~isnan(errors(i).translation)
-        if ~exist(fullfile(fullfile(params.evaluation.dir,'all_results'),sprintf('%s_results_q_id_%d_best_db_%d.jpg',sprintf('err_%.2fm_%.0fdeg',errors(i).translation,errors(i).orientation),i,1)))
-            getSynthView(params,ImgList,i,1,true,fullfile(params.evaluation.dir,'all_results'),sprintf('err_%.2fm_%.0fdeg',errors(i).translation,errors(i).orientation));
+        prefix = sprintf('err_%.2fm_%.0fdeg', errors(i).translation, errors(i).orientation);
+        fname = sprintf('%s_results_q_id_%d_best_db_%d.jpg', prefix, i, 1);
+        if ~exist(fullfile(params.evaluation.overlays, fname))
+            getSynthView(params, ImgList, i, 1, params.evaluation.overlays, prefix);
         end
     end
-    if visual_inspection && isnan(errors(i).translation)
-        if ~exist(fullfile(fullfile(params.evaluation.dir,'all_results'),sprintf('%s_results_q_id_%d_best_db_%d.jpg',sprintf('err_NaN'),i,1)))
-            getFailureView(params,ImgList,i,1,true,fullfile(params.evaluation.dir,'all_results'),sprintf('%s_results_q_id_%d_best_db_%d.jpg',sprintf('err_NaN'),i,1));
-        end
-    end
+    % if visual_inspection && isnan(errors(i).translation)
+    %     if ~exist(fullfile(params.evaluation.overlays,sprintf('%s_results_q_id_%d_best_db_%d.jpg',sprintf('err_NaN'),i,1)))
+    %         getFailureView(params,ImgList,i,1,true,params.evaluation.overlays,sprintf('%s_results_q_id_%d_best_db_%d.jpg',sprintf('err_NaN'),i,1));
+    %     end
+    % end
 
-
-
-    [~, name] = fileparts(queryPoseFilename);
-    retrievedPosePath = fullfile(params.evaluation.retrieved.poses.dir, name);
-    mkdirIfNonExistent(fileparts(retrievedPosePath));
+    [~, name, ext] = fileparts(queryPoseFilename);
+    retrievedPosePath = fullfile(params.evaluation.retrieved.poses.dir, strcat(name,ext));
     retrievedPoseFile = fopen(retrievedPosePath, 'w');
-    % P_str = P_to_str(P_est.P);
     fprintf(retrievedPoseFile, jsonencode(P_est.P));
     fclose(retrievedPoseFile);
 
     retrievedQueries(i).id = i;
-    % retrievedQueries(i).space = ref_spaceName;
+    retrievedQueries(i).space = query_eval{i}.est_space;
 
     sprintf('DONE %s', ImgList(i).query_path);
 end
+
 save(fullfile(params.evaluation.dir,'query_eval.mat'),'query_eval', '-v7');
+
 % errors
-errorsBak = errors;
-errorsTable = struct2table(errors);
-errors = table2struct(sortrows(errorsTable, 'queryId'));
+errors = struct2table(errors);
+errors = table2struct(sortrows(errors, 'queryId'));
 errorsFile = fopen(params.evaluation.errors.path, 'w');
 fprintf(errorsFile, 'id,inMap,translation,orientation\n');
 for i=1:nQueries
-    % inMapStr = 'No';
-    % if errors(i).inMap
-    %     inMapStr = 'Yes';
-    % end
-    fprintf(errorsFile, '%d,%s,%0.4f,%0.4f\n', errors(i).queryId, "Yes", errors(i).translation, errors(i).orientation);
+    inMapStr = 'No';
+    if errors(i).inMap
+        inMapStr = 'Yes';
+    end
+    fprintf(errorsFile, '%s,%s,%0.4f,%0.4f\n', errors(i).queryId, inMapStr, errors(i).translation, errors(i).orientation);
 end
 fclose(errorsFile);
-errors = errorsBak; % we cannot use the sorted. it would break compatibility with blacklistedQueries array!
 
 meaningfulTranslationErrors = [errors(~isnan([errors.translation])).translation];
 meaningfulOrientationErrors = [errors(~isnan([errors.orientation])).orientation];
@@ -233,89 +215,79 @@ stdTranslation = std(meaningfulTranslationErrors);
 stdOrientation = std(meaningfulOrientationErrors);
 
 % retrievedQueries
-retrievedQueriesTable = struct2table(retrievedQueries);
-retrievedQueries = table2struct(sortrows(retrievedQueriesTable, 'id'));
+retrievedQueries = struct2table(retrievedQueries);
+retrievedQueries = table2struct(sortrows(retrievedQueries, 'id'));
 retrievedQueriesFile = fopen(params.evaluation.retrieved.queries.path, 'w');
 fprintf(retrievedQueriesFile, 'id space\n');
 for i=1:nQueries
-    fprintf(retrievedQueriesFile, '%d %s\n', retrievedQueries(i).id, ...
-        "");
-        %retrievedQueries(i).space);
+    fprintf(retrievedQueriesFile, '%d %s\n', retrievedQueries(i).id, retrievedQueries(i).space);
 end
 fclose(retrievedQueriesFile);
 
-%% summary
-summaryFile = fopen(params.evaluation.summary.path, 'w');
-% thresholds = [[0.05 10],[0.10 10],[0.15 10],[0.20 10],[0.25 10], [0.5 10], [0.75 10],[1 10],[2 10],[5 10]];
-thresholds =  logspace(0,2,32)/50;
-thresholds = [thresholds; 10*ones(1,size(thresholds,2))];
-scores = zeros(1, size(thresholds,2));
-inMapScores = scores;
-offMapScores = scores;
-fprintf(summaryFile, 'Conditions: ');
-for i=1:size(thresholds,2)
-    if i > 1
-        fprintf(summaryFile, ' / ');
-    end
-    fprintf(summaryFile, '(%g [m], %g [deg])', thresholds(1,i), thresholds(2,i));
+%%%%%%%%%%%
+% SUMMARY %
+%%%%%%%%%%%
 
-    count = 0;
-    inMapCount = 0;
-    offMapCount = 0;
-    inMapSize = 0;
-    offMapSize = 0;
+summaryFile = fopen(params.evaluation.summary.path, 'w');
+thresholds = [[0.25; 2], [0.5; 5], [2.5; 7.5] [5; 10], [7.5; 15], [10; 20], [15; 30], [20; 30]];
+% thresholds =  logspace(0,2,32)/20;
+% thresholds = [thresholds; 10*ones(1,size(thresholds,2))];
+
+inMapSize = 0;
+offMapSize = 0;
+for j=1:length(errors)
+    if errors(j).inMap
+        inMapSize = inMapSize + 1;
+    else
+        offMapSize = offMapSize + 1;
+    end
+end
+
+if inMapSize == 0
+    inMapScores = zeros(1, size(thresholds, 2));
+else
+    inMapScores = 100.0 * ones(1, size(thresholds, 2)) / double(inMapSize);
+end
+if offMapSize == 0
+    offMapScores = zeros(1, size(thresholds, 2));
+else
+    offMapScores = 100.0 * ones(1, size(thresholds, 2)) / double(offMapSize);
+end
+scores = 100.0 * ones(1, size(thresholds,2)) / double(length(errors));
+
+for i=1:size(thresholds,2)
+    count = 0.0;
+    inMapCount = 0.0;
+    offMapCount = 0.0;
     for j=1:length(errors)
         if errors(j).translation < thresholds(1,i) && errors(j).orientation < thresholds(2,i)
-            count = count + 1;
             if errors(j).inMap
+                count = count + 1;
                 inMapCount = inMapCount + 1;
             else
                 offMapCount = offMapCount + 1;
             end
         end
-%         if errors(j).inMap
-%             inMapSize = inMapSize + 1;
-%         else
-%             offMapSize = offMapSize + 1;
-%         end
     end
 
     % we want to include cases InLoc got lost, but not blacklisted queries (=no reference poses)
-    nMeaningfulErrors = length(errors);
-    scores(i) = count / nMeaningfulErrors * 100;
-    inMapScores(i) = inMapCount / inMapSize * 100;
-    offMapScores(i) = offMapCount / offMapSize * 100;
+    scores(i) = count * scores(i);
+    inMapScores(i) = inMapCount * inMapScores(i);
+    offMapScores(i) = offMapCount * offMapScores(i);
 end
-fprintf(summaryFile, '\n');
+
+fprintf(summaryFile, 'Thresholds            Percentage   InMap      OffMap\n');
 for i=1:size(scores,2)
-    if i > 1
-        fprintf(summaryFile, ' / ');
-    end
-    fprintf(summaryFile, '%g [%%]', scores(i));
+    fprintf(summaryFile, '(%5.2f m, %5.2f deg):   ', thresholds(1,i), thresholds(2,i));
+    fprintf(summaryFile, '%5.1f %%  ', scores(i));
+    fprintf(summaryFile, '%4.1f [%%]    ', inMapScores(i));
+    fprintf(summaryFile, '%4.1f [%%]\n', offMapScores(i));
 end
 fprintf(summaryFile, '\n');
-
-% inMap
-for i=1:size(inMapScores,2)
-    if i > 1
-        fprintf(summaryFile, ' / ');
-    end
-    fprintf(summaryFile, '%0.2f [%%]', inMapScores(i));
-end
-fprintf(summaryFile, ' -- InMap\n');
-
-% offMap
-% for i=1:size(offMapScores,2)
-%     if i > 1
-%         fprintf(summaryFile, ' / ');
-%     end
-%     fprintf(summaryFile, '%0.2f [%%]', offMapScores(i));
-% end
-% fprintf(summaryFile, ' -- OffMap\n');
 fprintf(summaryFile, '\nInLocCIIRC got completely lost %d out of %d times. Not included in the mean/median/std errors.\n', ...
     inLocCIIRCLostCount, nQueries);
 fprintf(summaryFile, '\nInLocCIIRC selected a wrong map %d out of %d times.\n', ...
-    offMapCount, nQueries);
+    offMapSize, nQueries);
 fprintf(summaryFile, '\nErrors (InLocCIIRC poses wrt reference poses):\n');
 fprintf(summaryFile, ' \ttranslation [m]\torientation [deg]\n');
 fprintf(summaryFile, 'Mean\t%0.2f\t%0.2f\n', meanTranslation, meanOrientation);
@@ -325,20 +297,24 @@ fclose(summaryFile);
 disp(fileread(params.evaluation.summary.path));
 
 f = figure('visible', 'off');
-thr_t = thresholds(1,:);
-thr_t;
-% plot3d([(0:size(scores,2))/2; 0 scores],'-b');
-plot3d([thr_t;scores],'-b','Marker','.','MarkerSize',20); hold on;
 grid on;
-% ax = gca
-xticks(gca,[0.1,0.15,0.2,(1:8)/4])
-xtickangle(-75)
-% xticklabels(gca,strsplit(num2str(thr_t)))
-hold on;
-xlabel('Distance threshold [m]');
-ylabel('Correctly localised queries [%]');
-title('InLoc SPRING at Broca');
-saveas(gcf,fullfile(params.evaluation.dir,'correctly_localized_queries.jpg'));
+yyaxis left
+plot(scores, thresholds(1,:), 'Marker', '.', 'MarkerSize', 20);
+ylabel('Distance threshold [m]');
+% hold on;
+% plot3d([thresholds(2,:); scores], '-b', 'Marker', '.', 'MarkerSize', 20);
+
+yyaxis right
+plot(scores, thresholds(2,:), 'Marker', '.', 'MarkerSize', 20);
+ylabel('Angular distance threshold [deg]');
+
+xlabel('Correctly localised queries [%]');
+legend('Distance', 'Angular distance');
+
+path_parts = strsplit(params_file, filesep);
+dset_name = path_parts(length(path_parts) - 1);
+title(sprintf('InLoc at %s', dset_name{1}));
+saveas(gcf, fullfile(params.evaluation.dir, 'correctly_localized_queries.jpg'));
 close(f);
 
 

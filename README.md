@@ -1,13 +1,27 @@
 # InLoc demo
 
+This is a fork of https://github.com/HajimeTaira/InLoc_demo.
+
+For the purpose of https://github.com/Auratons/master_thesis,
+the pipeline was generalized and stored in `inloc_all_in_one.m`
+file. The evaluation entrypoint is `inloc_all_in_one_evaluate.m`.
+
+Running the codes is described in the top level repository
+https://github.com/Auratons/inloc. For the InLoc dataset features
+are extremely big, so a support for a sliding window was added,
+it is visible in the `dvc` folder of the inloc repository.
+The scores.mat needs to be manually combined from the partial
+windowed scores.
+
+## Upstream README  
+
 This toolkit provides scalable indoor visual localization (InLoc) demo on InLoc dataset. 
 Please send bug reports and suggestions to <htaira@ok.ctrl.titech.ac.jp>, <torii@sc.e.titech.ac.jp> . 
 
 2019.5.1 Update. 
 We open an online evaluation tool for visual localization on the InLoc dataset (<https://www.visuallocalization.net/>). The tool accepts the localization results in text format. Please use `` functions/utils/ImgList2text.m `` in this repository to convert .mat result file to the proper text format. 
 
-
-## Installation
+### Installation
 
 * Install dependencies
 
@@ -40,7 +54,7 @@ We open an online evaluation tool for visual localization on the InLoc dataset (
 
     Then modify paths in `` functions/ht_pnp_function/make_PnP_mex.m `` and execute it in Matlab. 
 
-## Quick Start
+### Quick Start
 
 * Download InLoc dataset (<https://github.com/HajimeTaira/InLoc_dataset>)
 
@@ -50,7 +64,7 @@ We open an online evaluation tool for visual localization on the InLoc dataset (
 
 * Optional: `` sparse_demo `` executes the baseline indoor visual localization using spase features. 
 
-## Outputs
+### Outputs
 
 `` InLoc_demo `` generates the matfile `` outputs/densePV_top10_shortlist.mat `` that contains localization results. 
 It includes a struct array named `` ImgList `` that consists of fields named 
@@ -58,7 +72,7 @@ It includes a struct array named `` ImgList `` that consists of fields named
 We are planning to build a evaluation server that computes the quantitative localization errors for the result files following this format. 
 Until then, we can evaluate your own localization results if you send it to <htaira@ok.ctrl.titech.ac.jp>. 
 
-## Details: Run InLoc with your own features and image retrieval
+### Details: Run InLoc with your own features and image retrieval
 
 * Prepare your own features, image lists, and retrieval scores
 
@@ -104,7 +118,7 @@ Until then, we can evaluate your own localization results if you send it to <hta
         We use 3rd and 5th layers for our coarse-to-fine matching, so we recommend to keep the other cells empty to eliminate loading time. 
         If there are no pre-computed features, our tool computes dense features by using model pre-trained as the part of NetVLAD. 
 
-### LICENSE
+#### LICENSE
 
 
 ```
